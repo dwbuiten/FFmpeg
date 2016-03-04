@@ -699,15 +699,9 @@ static int parse_video_info(AVIOContext *pb, AVStream *st)
     st->codecpar->height = avio_rl32(pb);
     avio_skip(pb, 1); // skip reserved flags
     size = avio_rl16(pb); // size of the Format Data
-<<<<<<< HEAD:libavformat/asfdec_o.c
     tag  = ff_get_bmp_header(pb, st, NULL);
-    st->codec->codec_tag = tag;
-    st->codec->codec_id  = ff_codec_get_id(ff_codec_bmp_tags, tag);
-=======
-    tag  = ff_get_bmp_header(pb, st);
     st->codecpar->codec_tag = tag;
     st->codecpar->codec_id  = ff_codec_get_id(ff_codec_bmp_tags, tag);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf:libavformat/asfdec.c
 
     if (size > BMP_HEADER_SIZE) {
         int ret;
@@ -796,11 +790,7 @@ static int asf_read_stream_properties(AVFormatContext *s, const GUIDParseTable *
     switch (type) {
     case AVMEDIA_TYPE_AUDIO:
         asf_st->type = AVMEDIA_TYPE_AUDIO;
-<<<<<<< HEAD:libavformat/asfdec_o.c
-        if ((ret = ff_get_wav_header(s, pb, st->codec, ts_data_len, 0)) < 0)
-=======
-        if ((ret = ff_get_wav_header(s, pb, st->codecpar, ts_data_len)) < 0)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf:libavformat/asfdec.c
+        if ((ret = ff_get_wav_header(s, pb, st->codecpar, ts_data_len, 0)) < 0)
             return ret;
         break;
     case AVMEDIA_TYPE_VIDEO:
