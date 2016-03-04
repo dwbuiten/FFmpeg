@@ -68,7 +68,7 @@ static int read_header(AVFormatContext *s)
     st->codecpar->height     = avio_rb16(pb);
     film->leading         = avio_rb16(pb);
 
-    if (st->codec->width * 4LL * st->codec->height >= INT_MAX) {
+    if (st->codecpar->width * 4LL * st->codecpar->height >= INT_MAX) {
         av_log(s, AV_LOG_ERROR, "dimensions too large\n");
         return AVERROR_PATCHWELCOME;
     }
@@ -88,15 +88,9 @@ static int read_packet(AVFormatContext *s,
 
     if (avio_feof(s->pb))
         return AVERROR(EIO);
-<<<<<<< HEAD
-    pkt->dts = avio_tell(s->pb) / (st->codec->width * (int64_t)(st->codec->height + film->leading) * 4);
-    pkt->size = av_get_packet(s->pb, pkt, st->codec->width * st->codec->height * 4);
-    avio_skip(s->pb, st->codec->width * (int64_t) film->leading * 4);
-=======
-    pkt->dts = avio_tell(s->pb) / (st->codecpar->width * (st->codecpar->height + film->leading) * 4);
+    pkt->dts = avio_tell(s->pb) / (st->codecpar->width * (int64_t)(st->codecpar->height + film->leading) * 4);
     pkt->size = av_get_packet(s->pb, pkt, st->codecpar->width * st->codecpar->height * 4);
     avio_skip(s->pb, st->codecpar->width * (int64_t) film->leading * 4);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     if (pkt->size < 0)
         return pkt->size;
     pkt->flags |= AV_PKT_FLAG_KEY;
