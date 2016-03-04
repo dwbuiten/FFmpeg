@@ -176,13 +176,8 @@ static int mp3_write_xing(AVFormatContext *s)
     header |= channels << 6;
 
     for (bitrate_idx = 1; bitrate_idx < 15; bitrate_idx++) {
-<<<<<<< HEAD
         int bit_rate = 1000 * avpriv_mpa_bitrate_tab[ver != 3][3 - 1][bitrate_idx];
-        int error    = FFABS(bit_rate - codec->bit_rate);
-=======
-        int bit_rate = 1000 * avpriv_mpa_bitrate_tab[lsf][3 - 1][bitrate_idx];
         int error    = FFABS(bit_rate - par->bit_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
         if (error < best_bitrate_error) {
             best_bitrate_error = error;
@@ -254,18 +249,10 @@ static int mp3_write_xing(AVFormatContext *s)
     avio_w8(dyn_ctx, 0);      // unknown abr/minimal bitrate
 
     // encoder delay
-<<<<<<< HEAD
-    if (codec->initial_padding - 528 - 1 >= 1 << 12) {
+    if (par->initial_padding - 528 - 1 >= 1 << 12) {
         av_log(s, AV_LOG_WARNING, "Too many samples of initial padding.\n");
-=======
-    if (par->initial_padding >= 1 << 12) {
-        av_log(s, AV_LOG_WARNING, "Too many samples of initial padding.\n");
-        avio_wb24(dyn_ctx, 0);
-    } else {
-        avio_wb24(dyn_ctx, par->initial_padding << 12);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
-    avio_wb24(dyn_ctx, FFMAX(codec->initial_padding - 528 - 1, 0)<<12);
+    avio_wb24(dyn_ctx, FFMAX(par->initial_padding - 528 - 1, 0)<<12);
 
     avio_w8(dyn_ctx,   0); // misc
     avio_w8(dyn_ctx,   0); // mp3gain

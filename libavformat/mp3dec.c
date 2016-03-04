@@ -330,13 +330,8 @@ static int mp3_parse_vbr_tags(AVFormatContext *s, AVStream *st, int64_t base)
     if (mp3->frames)
         st->duration = av_rescale_q(mp3->frames, (AVRational){spf, c.sample_rate},
                                     st->time_base);
-<<<<<<< HEAD
     if (mp3->header_filesize && mp3->frames && !mp3->is_cbr)
-        st->codec->bit_rate = av_rescale(mp3->header_filesize, 8 * c.sample_rate, mp3->frames * (int64_t)spf);
-=======
-    if (mp3->size && mp3->frames && !mp3->is_cbr)
-        st->codecpar->bit_rate = av_rescale(mp3->size, 8 * c.sample_rate, mp3->frames * (int64_t)spf);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        st->codecpar->bit_rate = av_rescale(mp3->header_filesize, 8 * c.sample_rate, mp3->frames * (int64_t)spf);
 
     return 0;
 }
@@ -353,15 +348,9 @@ static int mp3_read_header(AVFormatContext *s)
     if (!st)
         return AVERROR(ENOMEM);
 
-<<<<<<< HEAD
-    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_id = AV_CODEC_ID_MP3;
-    st->need_parsing = AVSTREAM_PARSE_FULL_RAW;
-=======
     st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codecpar->codec_id = AV_CODEC_ID_MP3;
-    st->need_parsing = AVSTREAM_PARSE_FULL;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    st->need_parsing = AVSTREAM_PARSE_FULL_RAW;
     st->start_time = 0;
 
     // lcm of all mp3 sample rates
