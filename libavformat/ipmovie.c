@@ -221,19 +221,19 @@ static int init_audio(AVFormatContext *s)
         return AVERROR(ENOMEM);
     avpriv_set_pts_info(st, 32, 1, ipmovie->audio_sample_rate);
     ipmovie->audio_stream_index = st->index;
-    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_id = ipmovie->audio_type;
-    st->codec->codec_tag = 0;  /* no tag */
-    st->codec->channels = ipmovie->audio_channels;
-    st->codec->channel_layout = st->codec->channels == 1 ? AV_CH_LAYOUT_MONO :
+    st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+    st->codecpar->codec_id = ipmovie->audio_type;
+    st->codecpar->codec_tag = 0;  /* no tag */
+    st->codecpar->channels = ipmovie->audio_channels;
+    st->codecpar->channel_layout = st->codecpar->channels == 1 ? AV_CH_LAYOUT_MONO :
                                                             AV_CH_LAYOUT_STEREO;
-    st->codec->sample_rate = ipmovie->audio_sample_rate;
-    st->codec->bits_per_coded_sample = ipmovie->audio_bits;
-    st->codec->bit_rate = st->codec->channels * st->codec->sample_rate *
-        st->codec->bits_per_coded_sample;
-    if (st->codec->codec_id == AV_CODEC_ID_INTERPLAY_DPCM)
-        st->codec->bit_rate /= 2;
-    st->codec->block_align = st->codec->channels * st->codec->bits_per_coded_sample;
+    st->codecpar->sample_rate = ipmovie->audio_sample_rate;
+    st->codecpar->bits_per_coded_sample = ipmovie->audio_bits;
+    st->codecpar->bit_rate = st->codecpar->channels * st->codecpar->sample_rate *
+        st->codecpar->bits_per_coded_sample;
+    if (st->codecpar->codec_id == AV_CODEC_ID_INTERPLAY_DPCM)
+        st->codecpar->bit_rate /= 2;
+    st->codecpar->block_align = st->codecpar->channels * st->codecpar->bits_per_coded_sample;
 
     return 0;
 }
@@ -631,31 +631,9 @@ static int ipmovie_read_header(AVFormatContext *s)
     st->codecpar->bits_per_coded_sample = ipmovie->video_bpp;
 
     if (ipmovie->audio_type) {
-<<<<<<< HEAD
         return init_audio(s);
     } else
        s->ctx_flags |= AVFMTCTX_NOHEADER;
-=======
-        st = avformat_new_stream(s, NULL);
-        if (!st)
-            return AVERROR(ENOMEM);
-        avpriv_set_pts_info(st, 32, 1, ipmovie->audio_sample_rate);
-        ipmovie->audio_stream_index = st->index;
-        st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
-        st->codecpar->codec_id = ipmovie->audio_type;
-        st->codecpar->codec_tag = 0;  /* no tag */
-        st->codecpar->channels = ipmovie->audio_channels;
-        st->codecpar->channel_layout = st->codecpar->channels == 1 ? AV_CH_LAYOUT_MONO :
-                                                                     AV_CH_LAYOUT_STEREO;
-        st->codecpar->sample_rate = ipmovie->audio_sample_rate;
-        st->codecpar->bits_per_coded_sample = ipmovie->audio_bits;
-        st->codecpar->bit_rate = st->codecpar->channels * st->codecpar->sample_rate *
-            st->codecpar->bits_per_coded_sample;
-        if (st->codecpar->codec_id == AV_CODEC_ID_INTERPLAY_DPCM)
-            st->codecpar->bit_rate /= 2;
-        st->codecpar->block_align = st->codecpar->channels * st->codecpar->bits_per_coded_sample;
-    }
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     return 0;
 }
