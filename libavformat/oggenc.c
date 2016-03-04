@@ -219,20 +219,14 @@ static int ogg_buffer_data(AVFormatContext *s, AVStream *st,
     int i, segments, len, flush = 0;
 
     // Handles VFR by flushing page because this frame needs to have a timestamp
-<<<<<<< HEAD
     // For theora, keyframes also need to have a timestamp to correctly mark
     // them as such, otherwise seeking will not work correctly at the very
     // least with old libogg versions.
     // Do not try to flush header packets though, that will create broken files.
-    if (st->codec->codec_id == AV_CODEC_ID_THEORA && !header &&
+    if (st->codecpar->codec_id == AV_CODEC_ID_THEORA && !header &&
         (ogg_granule_to_timestamp(oggstream, granule) >
          ogg_granule_to_timestamp(oggstream, oggstream->last_granule) + 1 ||
          ogg_key_granule(oggstream, granule))) {
-=======
-    if (st->codecpar->codec_id == AV_CODEC_ID_THEORA && !header &&
-        ogg_granule_to_timestamp(oggstream, granule) >
-        ogg_granule_to_timestamp(oggstream, oggstream->last_granule) + 1) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         if (oggstream->page.granule != -1)
             ogg_buffer_page(s, oggstream);
         flush = 1;
@@ -361,13 +355,8 @@ static int ogg_build_speex_headers(AVCodecParameters *par,
 {
     uint8_t *p;
 
-<<<<<<< HEAD
-    if (avctx->extradata_size < SPEEX_HEADER_SIZE)
-        return AVERROR_INVALIDDATA;
-=======
     if (par->extradata_size < SPEEX_HEADER_SIZE)
-        return -1;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        return AVERROR_INVALIDDATA;
 
     // first packet: Speex header
     p = av_mallocz(SPEEX_HEADER_SIZE);
@@ -395,13 +384,8 @@ static int ogg_build_opus_headers(AVCodecParameters *par,
 {
     uint8_t *p;
 
-<<<<<<< HEAD
-    if (avctx->extradata_size < OPUS_HEADER_SIZE)
-        return AVERROR_INVALIDDATA;
-=======
     if (par->extradata_size < OPUS_HEADER_SIZE)
-        return -1;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        return AVERROR_INVALIDDATA;
 
     /* first packet: Opus header */
     p = av_mallocz(par->extradata_size);
@@ -456,22 +440,13 @@ static int ogg_write_header(AVFormatContext *s)
         AVStream *st = s->streams[i];
         unsigned serial_num = i + ogg->serial_offset;
 
-<<<<<<< HEAD
-        if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-            if (st->codec->codec_id == AV_CODEC_ID_OPUS)
-                /* Opus requires a fixed 48kHz clock */
-                avpriv_set_pts_info(st, 64, 1, 48000);
-            else
-                avpriv_set_pts_info(st, 64, 1, st->codec->sample_rate);
-        }
-=======
-        if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+        if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             if (st->codecpar->codec_id == AV_CODEC_ID_OPUS)
                 /* Opus requires a fixed 48kHz clock */
                 avpriv_set_pts_info(st, 64, 1, 48000);
             else
                 avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        }
 
         if (st->codecpar->codec_id != AV_CODEC_ID_VORBIS &&
             st->codecpar->codec_id != AV_CODEC_ID_THEORA &&
@@ -539,15 +514,9 @@ static int ogg_write_header(AVFormatContext *s)
             int header_type = st->codecpar->codec_id == AV_CODEC_ID_VORBIS ? 3 : 0x81;
             int framing_bit = st->codecpar->codec_id == AV_CODEC_ID_VORBIS ? 1 : 0;
 
-<<<<<<< HEAD
-            if (avpriv_split_xiph_headers(st->codec->extradata, st->codec->extradata_size,
-                                      st->codec->codec_id == AV_CODEC_ID_VORBIS ? 30 : 42,
-                                      (const uint8_t**)oggstream->header, oggstream->header_len) < 0) {
-=======
             if (avpriv_split_xiph_headers(st->codecpar->extradata, st->codecpar->extradata_size,
                                       st->codecpar->codec_id == AV_CODEC_ID_VORBIS ? 30 : 42,
-                                      oggstream->header, oggstream->header_len) < 0) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                                      (const uint8_t**)oggstream->header, oggstream->header_len) < 0) {
                 av_log(s, AV_LOG_ERROR, "Extradata corrupted\n");
                 av_freep(&st->priv_data);
                 return AVERROR_INVALIDDATA;
@@ -674,17 +643,10 @@ static int ogg_write_trailer(AVFormatContext *s)
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *st = s->streams[i];
         OGGStreamContext *oggstream = st->priv_data;
-<<<<<<< HEAD
-        if (st->codec->codec_id == AV_CODEC_ID_FLAC ||
-            st->codec->codec_id == AV_CODEC_ID_SPEEX ||
-            st->codec->codec_id == AV_CODEC_ID_OPUS) {
-            av_freep(&oggstream->header[0]);
-=======
         if (st->codecpar->codec_id == AV_CODEC_ID_FLAC ||
             st->codecpar->codec_id == AV_CODEC_ID_SPEEX ||
             st->codecpar->codec_id == AV_CODEC_ID_OPUS) {
-            av_free(oggstream->header[0]);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            av_freep(&oggstream->header[0]);
         }
         av_freep(&oggstream->header[1]);
         av_freep(&st->priv_data);

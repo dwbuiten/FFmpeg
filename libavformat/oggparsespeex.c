@@ -60,20 +60,14 @@ static int speex_header(AVFormatContext *s, int idx) {
         st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
         st->codecpar->codec_id = AV_CODEC_ID_SPEEX;
 
-<<<<<<< HEAD
         if (os->psize < 68) {
             av_log(s, AV_LOG_ERROR, "speex packet too small\n");
             return AVERROR_INVALIDDATA;
         }
 
-        st->codec->sample_rate = AV_RL32(p + 36);
-        st->codec->channels = AV_RL32(p + 48);
-        if (st->codec->channels < 1 || st->codec->channels > 2) {
-=======
         st->codecpar->sample_rate = AV_RL32(p + 36);
         st->codecpar->channels = AV_RL32(p + 48);
         if (st->codecpar->channels < 1 || st->codecpar->channels > 2) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             av_log(s, AV_LOG_ERROR, "invalid channel count. Speex must be mono or stereo.\n");
             return AVERROR_INVALIDDATA;
         }
@@ -85,16 +79,9 @@ static int speex_header(AVFormatContext *s, int idx) {
         if (frames_per_packet)
             spxp->packet_size *= frames_per_packet;
 
-<<<<<<< HEAD
-        if (ff_alloc_extradata(st->codec, os->psize) < 0)
+        if (ff_alloc_extradata(st->codecpar, os->psize) < 0)
             return AVERROR(ENOMEM);
-        memcpy(st->codec->extradata, p, st->codec->extradata_size);
-=======
-        st->codecpar->extradata_size = os->psize;
-        st->codecpar->extradata = av_malloc(st->codecpar->extradata_size
-                                            + AV_INPUT_BUFFER_PADDING_SIZE);
         memcpy(st->codecpar->extradata, p, st->codecpar->extradata_size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
         avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
     } else

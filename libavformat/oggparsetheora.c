@@ -131,13 +131,9 @@ static int theora_header(AVFormatContext *s, int idx)
         st->codecpar->extradata_size = 0;
         return err;
     }
-<<<<<<< HEAD
-    memset(st->codec->extradata + cds, 0, AV_INPUT_BUFFER_PADDING_SIZE);
+    memset(st->codecpar->extradata + cds, 0, AV_INPUT_BUFFER_PADDING_SIZE);
 
-    cdp    = st->codec->extradata + st->codec->extradata_size;
-=======
     cdp    = st->codecpar->extradata + st->codecpar->extradata_size;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     *cdp++ = os->psize >> 8;
     *cdp++ = os->psize & 0xff;
     memcpy(cdp, os->buf + os->pstart, os->psize);

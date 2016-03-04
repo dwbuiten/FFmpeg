@@ -334,16 +334,12 @@ static int vorbis_header(AVFormatContext *s, int idx)
         if (bytestream_get_le32(&p) != 0) /* vorbis_version */
             return AVERROR_INVALIDDATA;
 
-<<<<<<< HEAD
         channels = bytestream_get_byte(&p);
-        if (st->codec->channels && channels != st->codec->channels) {
+        if (st->codecpar->channels && channels != st->codecpar->channels) {
             av_log(s, AV_LOG_ERROR, "Channel change is not supported\n");
             return AVERROR_PATCHWELCOME;
         }
-        st->codec->channels = channels;
-=======
-        st->codecpar->channels = bytestream_get_byte(&p);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        st->codecpar->channels = channels;
         srate               = bytestream_get_le32(&p);
         p += 4; // skip maximum bitrate
         st->codecpar->bit_rate = bytestream_get_le32(&p); // nominal bitrate
@@ -394,15 +390,9 @@ static int vorbis_header(AVFormatContext *s, int idx)
 
         priv->vp = av_vorbis_parse_init(st->codecpar->extradata, st->codecpar->extradata_size);
         if (!priv->vp) {
-<<<<<<< HEAD
-            av_freep(&st->codec->extradata);
-            st->codec->extradata_size = 0;
-            return AVERROR_UNKNOWN;
-=======
             av_freep(&st->codecpar->extradata);
             st->codecpar->extradata_size = 0;
-            return ret;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            return AVERROR_UNKNOWN;
         }
     }
 

@@ -55,15 +55,10 @@ ogm_header(AVFormatContext *s, int idx)
             st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
             bytestream2_skip(&p, 8);
             tag = bytestream2_get_le32(&p);
-<<<<<<< HEAD
-            st->codec->codec_id = ff_codec_get_id(ff_codec_bmp_tags, tag);
-            st->codec->codec_tag = tag;
-            if (st->codec->codec_id == AV_CODEC_ID_MPEG4)
-                st->need_parsing = AVSTREAM_PARSE_HEADERS;
-=======
             st->codecpar->codec_id = ff_codec_get_id(ff_codec_bmp_tags, tag);
             st->codecpar->codec_tag = tag;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            if (st->codecpar->codec_id == AV_CODEC_ID_MPEG4)
+                st->need_parsing = AVSTREAM_PARSE_HEADERS;
         } else if (bytestream2_peek_byte(&p) == 't') {
             st->codecpar->codec_type = AVMEDIA_TYPE_SUBTITLE;
             st->codecpar->codec_id = AV_CODEC_ID_TEXT;
@@ -76,15 +71,10 @@ ogm_header(AVFormatContext *s, int idx)
             bytestream2_get_buffer(&p, acid, 4);
             acid[4] = 0;
             cid = strtol(acid, NULL, 16);
-<<<<<<< HEAD
-            st->codec->codec_id = ff_codec_get_id(ff_codec_wav_tags, cid);
-            // our parser completely breaks AAC in Ogg
-            if (st->codec->codec_id != AV_CODEC_ID_AAC)
-                st->need_parsing = AVSTREAM_PARSE_FULL;
-=======
             st->codecpar->codec_id = ff_codec_get_id(ff_codec_wav_tags, cid);
-            st->need_parsing = AVSTREAM_PARSE_FULL;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            // our parser completely breaks AAC in Ogg
+            if (st->codecpar->codec_id != AV_CODEC_ID_AAC)
+                st->need_parsing = AVSTREAM_PARSE_FULL;
         }
 
         size        = bytestream2_get_le32(&p);
@@ -106,25 +96,19 @@ ogm_header(AVFormatContext *s, int idx)
         } else {
             st->codecpar->channels = bytestream2_get_le16(&p);
             bytestream2_skip(&p, 2); /* block_align */
-<<<<<<< HEAD
-            st->codec->bit_rate = bytestream2_get_le32(&p) * 8;
-            st->codec->sample_rate = spu * 10000000 / time_unit;
-            avpriv_set_pts_info(st, 64, 1, st->codec->sample_rate);
-            if (size >= 56 && st->codec->codec_id == AV_CODEC_ID_AAC) {
+            st->codecpar->bit_rate = bytestream2_get_le32(&p) * 8;
+            st->codecpar->sample_rate = spu * 10000000 / time_unit;
+            avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
+            if (size >= 56 && st->codecpar->codec_id == AV_CODEC_ID_AAC) {
                 bytestream2_skip(&p, 4);
                 size -= 4;
             }
             if (size > 52) {
                 av_assert0(AV_INPUT_BUFFER_PADDING_SIZE <= 52);
                 size -= 52;
-                ff_alloc_extradata(st->codec, size);
-                bytestream2_get_buffer(&p, st->codec->extradata, st->codec->extradata_size);
+                ff_alloc_extradata(st->codecpar, size);
+                bytestream2_get_buffer(&p, st->codecpar->extradata, st->codecpar->extradata_size);
             }
-=======
-            st->codecpar->bit_rate = bytestream2_get_le32(&p) * 8;
-            st->codecpar->sample_rate = spu * 10000000 / time_unit;
-            avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         }
     } else if (bytestream2_peek_byte(&p) == 3) {
         bytestream2_skip(&p, 7);
@@ -154,36 +138,23 @@ ogm_dshow_header(AVFormatContext *s, int idx)
     t = AV_RL32(p + 96);
 
     if(t == 0x05589f80){
-<<<<<<< HEAD
         if (os->psize < 184)
             return AVERROR_INVALIDDATA;
 
-        st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-        st->codec->codec_id = ff_codec_get_id(ff_codec_bmp_tags, AV_RL32(p + 68));
-=======
         st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
         st->codecpar->codec_id = ff_codec_get_id(ff_codec_bmp_tags, AV_RL32(p + 68));
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         avpriv_set_pts_info(st, 64, AV_RL64(p + 164), 10000000);
         st->codecpar->width = AV_RL32(p + 176);
         st->codecpar->height = AV_RL32(p + 180);
     } else if(t == 0x05589f81){
-<<<<<<< HEAD
         if (os->psize < 136)
             return AVERROR_INVALIDDATA;
 
-        st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-        st->codec->codec_id = ff_codec_get_id(ff_codec_wav_tags, AV_RL16(p + 124));
-        st->codec->channels = AV_RL16(p + 126);
-        st->codec->sample_rate = AV_RL32(p + 128);
-        st->codec->bit_rate = AV_RL32(p + 132) * 8;
-=======
         st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
         st->codecpar->codec_id = ff_codec_get_id(ff_codec_wav_tags, AV_RL16(p + 124));
         st->codecpar->channels = AV_RL16(p + 126);
         st->codecpar->sample_rate = AV_RL32(p + 128);
         st->codecpar->bit_rate = AV_RL32(p + 132) * 8;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
 
     return 1;
