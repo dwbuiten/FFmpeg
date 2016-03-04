@@ -841,7 +841,7 @@ static void mxf_write_common_fields(AVFormatContext *s, AVStream *st)
     // write duration
     mxf_write_local_tag(pb, 8, 0x0202);
 
-    if (st != mxf->timecode_track && s->oformat == &ff_mxf_opatom_muxer && st->codec->codec_type == AVMEDIA_TYPE_AUDIO){
+    if (st != mxf->timecode_track && s->oformat == &ff_mxf_opatom_muxer && st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
         avio_wb64(pb, mxf->body_offset / mxf->edit_unit_byte_count);
     } else {
         avio_wb64(pb, mxf->duration);
@@ -1042,7 +1042,7 @@ static void mxf_write_cdci_common(AVFormatContext *s, AVStream *st, const UID ke
 
     // presentation Y offset
     mxf_write_local_tag(pb, 4, 0x320B);
-    avio_wb32(pb, (st->codec->height - display_height)>>sc->interlaced);
+    avio_wb32(pb, (st->codecpar->height - display_height)>>sc->interlaced);
 
     // component depth
     mxf_write_local_tag(pb, 4, 0x3301);
@@ -1066,15 +1066,10 @@ static void mxf_write_cdci_common(AVFormatContext *s, AVStream *st, const UID ke
     avio_w8(pb, sc->interlaced);
 
     // video line map
-<<<<<<< HEAD
-    switch (st->codec->height) {
-    case  576: f1 = 23; f2 = st->codec->codec_id == AV_CODEC_ID_DVVIDEO ? 335 : 336; break;
-=======
     switch (st->codecpar->height) {
-    case  576: f1 = 23; f2 = 336; break;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    case  576: f1 = 23; f2 = st->codecpar->codec_id == AV_CODEC_ID_DVVIDEO ? 335 : 336; break;
     case  608: f1 =  7; f2 = 320; break;
-    case  480: f1 = 20; f2 = st->codec->codec_id == AV_CODEC_ID_DVVIDEO ? 285 : 283; break;
+    case  480: f1 = 20; f2 = st->codecpar->codec_id == AV_CODEC_ID_DVVIDEO ? 285 : 283; break;
     case  512: f1 =  7; f2 = 270; break;
     case  720: f1 = 26; f2 =   0; break; // progressive
     case 1080: f1 = 21; f2 = 584; break;
@@ -1115,40 +1110,24 @@ static void mxf_write_cdci_desc(AVFormatContext *s, AVStream *st)
 static void mxf_write_mpegvideo_desc(AVFormatContext *s, AVStream *st)
 {
     AVIOContext *pb = s->pb;
-<<<<<<< HEAD
     MXFStreamContext *sc = st->priv_data;
-    int profile_and_level = (st->codec->profile<<4) | st->codec->level;
-=======
     int profile_and_level = (st->codecpar->profile<<4) | st->codecpar->level;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
-    if (st->codec->codec_id != AV_CODEC_ID_H264) {
+    if (st->codecpar->codec_id != AV_CODEC_ID_H264) {
         mxf_write_cdci_common(s, st, mxf_mpegvideo_descriptor_key, 8+5);
 
-<<<<<<< HEAD
         // bit rate
         mxf_write_local_tag(pb, 4, 0x8000);
         avio_wb32(pb, sc->video_bit_rate);
 
         // profile and level
         mxf_write_local_tag(pb, 1, 0x8007);
-        if (!st->codec->profile)
+        if (!st->codecpar->profile)
             profile_and_level |= 0x80; // escape bit
         avio_w8(pb, profile_and_level);
     } else {
         mxf_write_cdci_common(s, st, mxf_mpegvideo_descriptor_key, 0);
     }
-=======
-    // bit rate
-    mxf_write_local_tag(pb, 4, 0x8000);
-    avio_wb32(pb, st->codecpar->bit_rate);
-
-    // profile and level
-    mxf_write_local_tag(pb, 1, 0x8007);
-    if (!st->codecpar->profile)
-        profile_and_level |= 0x80; // escape bit
-    avio_w8(pb, profile_and_level);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 }
 
 static void mxf_write_generic_sound_common(AVFormatContext *s, AVStream *st, const UID key, unsigned size)
@@ -1178,13 +1157,12 @@ static void mxf_write_generic_sound_common(AVFormatContext *s, AVStream *st, con
     avio_wb32(pb, 1);
 
     mxf_write_local_tag(pb, 4, 0x3D07);
-<<<<<<< HEAD
     if (mxf->channel_count == -1) {
-        if (show_warnings && (s->oformat == &ff_mxf_d10_muxer) && (st->codec->channels != 4) && (st->codec->channels != 8))
+        if (show_warnings && (s->oformat == &ff_mxf_d10_muxer) && (st->codecpar->channels != 4) && (st->codecpar->channels != 8))
             av_log(s, AV_LOG_WARNING, "the number of audio channels shall be 4 or 8 : the output will not comply to MXF D-10 specs, use -d10_channelcount to fix this\n");
-        avio_wb32(pb, st->codec->channels);
+        avio_wb32(pb, st->codecpar->channels);
     } else if (s->oformat == &ff_mxf_d10_muxer) {
-        if (show_warnings && (mxf->channel_count < st->codec->channels))
+        if (show_warnings && (mxf->channel_count < st->codecpar->channels))
             av_log(s, AV_LOG_WARNING, "d10_channelcount < actual number of audio channels : some channels will be discarded\n");
         if (show_warnings && (mxf->channel_count != 4) && (mxf->channel_count != 8))
             av_log(s, AV_LOG_WARNING, "d10_channelcount shall be set to 4 or 8 : the output will not comply to MXF D-10 specs\n");
@@ -1192,11 +1170,8 @@ static void mxf_write_generic_sound_common(AVFormatContext *s, AVStream *st, con
     } else {
         if (show_warnings && mxf->channel_count != -1 && s->oformat != &ff_mxf_opatom_muxer)
             av_log(s, AV_LOG_ERROR, "-d10_channelcount requires MXF D-10 and will be ignored\n");
-        avio_wb32(pb, st->codec->channels);
+        avio_wb32(pb, st->codecpar->channels);
     }
-=======
-    avio_wb32(pb, st->codecpar->channels);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     mxf_write_local_tag(pb, 4, 0x3D01);
     avio_wb32(pb, av_get_bits_per_sample(st->codecpar->codec_id));
@@ -1754,10 +1729,10 @@ AVPacket *pkt)
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *st = s->streams[i];
         MXFStreamContext *sc = st->priv_data;
-        if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+        if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             mxf->edit_unit_byte_count += 16 + 4 + sc->aic.samples[0]*sc->aic.sample_size;
             mxf->edit_unit_byte_count += klv_fill_size(mxf->edit_unit_byte_count);
-        } else if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+        } else if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             mxf->edit_unit_byte_count += 16 + 4 + frame_size;
             mxf->edit_unit_byte_count += klv_fill_size(mxf->edit_unit_byte_count);
         }
@@ -1829,10 +1804,10 @@ static int mxf_parse_dv_frame(AVFormatContext *s, AVStream *st, AVPacket *pkt)
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *st = s->streams[i];
         MXFStreamContext *sc = st->priv_data;
-        if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+        if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             mxf->edit_unit_byte_count += 16 + 4 + sc->aic.samples[0]*sc->aic.sample_size;
             mxf->edit_unit_byte_count += klv_fill_size(mxf->edit_unit_byte_count);
-        } else if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+        } else if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             mxf->edit_unit_byte_count += 16 + 4 + frame_size;
             mxf->edit_unit_byte_count += klv_fill_size(mxf->edit_unit_byte_count);
         }
@@ -1886,7 +1861,7 @@ static int mxf_parse_h264_frame(AVFormatContext *s, AVStream *st,
         --buf;
         switch (state & 0x1f) {
         case NAL_SPS:
-            st->codec->profile = buf[1];
+            st->codecpar->profile = buf[1];
             e->flags |= 0x40;
             break;
         case NAL_PPS:
@@ -1906,7 +1881,7 @@ static int mxf_parse_h264_frame(AVFormatContext *s, AVStream *st,
 
     sc->aspect_ratio = (AVRational){ 16, 9 }; // 16:9 is mandatory for broadcast HD
     sc->component_depth = 10; // AVC Intra is always 10 Bit
-    sc->interlaced = st->codec->field_order != AV_FIELD_PROGRESSIVE ? 1 : 0;
+    sc->interlaced = st->codecpar->field_order != AV_FIELD_PROGRESSIVE ? 1 : 0;
     if (sc->interlaced)
         sc->field_dominance = 1; // top field first is mandatory for AVC Intra
 
@@ -1916,7 +1891,7 @@ static int mxf_parse_h264_frame(AVFormatContext *s, AVStream *st,
         if (frame_size == mxf_h264_codec_uls[i].frame_size && sc->interlaced == mxf_h264_codec_uls[i].interlaced) {
             sc->codec_ul = &mxf_h264_codec_uls[i].uid;
             return 1;
-        } else if (st->codec->profile == mxf_h264_codec_uls[i].profile) {
+        } else if (st->codecpar->profile == mxf_h264_codec_uls[i].profile) {
             sc->codec_ul = &mxf_h264_codec_uls[i].uid;
             uid_found = 1;
         }
@@ -2086,21 +2061,13 @@ static int mxf_write_header(AVFormatContext *s)
             return AVERROR(ENOMEM);
         st->priv_data = sc;
 
-<<<<<<< HEAD
-        if (((i == 0) ^ (st->codec->codec_type == AVMEDIA_TYPE_VIDEO)) && s->oformat != &ff_mxf_opatom_muxer) {
+        if (((i == 0) ^ (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)) && s->oformat != &ff_mxf_opatom_muxer) {
             av_log(s, AV_LOG_ERROR, "there must be exactly one video stream and it must be the first one\n");
             return -1;
         }
 
-        if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-            const AVPixFmtDescriptor *pix_desc = av_pix_fmt_desc_get(st->codec->pix_fmt);
-=======
         if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-            if (i != 0) {
-                av_log(s, AV_LOG_ERROR, "video stream must be first track\n");
-                return -1;
-            }
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            const AVPixFmtDescriptor *pix_desc = av_pix_fmt_desc_get(st->codecpar->format);
             // TODO: should be avg_frame_rate
             AVRational rate, tbc = st->time_base;
             // Default component depth to 8
@@ -2132,9 +2099,8 @@ static int mxf_write_header(AVFormatContext *s)
             if((ret = mxf_init_timecode(s, st, rate)) < 0)
                 return ret;
 
-            sc->video_bit_rate = st->codec->bit_rate ? st->codec->bit_rate : st->codec->rc_max_rate;
+            sc->video_bit_rate = st->codecpar->bit_rate;
             if (s->oformat == &ff_mxf_d10_muxer) {
-<<<<<<< HEAD
                 if ((sc->video_bit_rate == 50000000) && (mxf->time_base.den == 25)) {
                     sc->index = 3;
                 } else if ((sc->video_bit_rate == 49999840 || sc->video_bit_rate == 50000000) && (mxf->time_base.den != 25)) {
@@ -2143,15 +2109,6 @@ static int mxf_write_header(AVFormatContext *s)
                     if (mxf->time_base.den == 25) sc->index = 7;
                     else                          sc->index = 9;
                 } else if (sc->video_bit_rate == 30000000) {
-=======
-                if (st->codecpar->bit_rate == 50000000)
-                    if (mxf->time_base.den == 25) sc->index = 3;
-                    else                          sc->index = 5;
-                else if (st->codecpar->bit_rate == 40000000)
-                    if (mxf->time_base.den == 25) sc->index = 7;
-                    else                          sc->index = 9;
-                else if (st->codecpar->bit_rate == 30000000)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                     if (mxf->time_base.den == 25) sc->index = 11;
                     else                          sc->index = 13;
                 } else {
@@ -2160,11 +2117,7 @@ static int mxf_write_header(AVFormatContext *s)
                 }
 
                 mxf->edit_unit_byte_count = KAG_SIZE; // system element
-<<<<<<< HEAD
                 mxf->edit_unit_byte_count += 16 + 4 + (uint64_t)sc->video_bit_rate *
-=======
-                mxf->edit_unit_byte_count += 16 + 4 + (uint64_t)st->codecpar->bit_rate *
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                     mxf->time_base.num / (8*mxf->time_base.den);
                 mxf->edit_unit_byte_count += klv_fill_size(mxf->edit_unit_byte_count);
                 mxf->edit_unit_byte_count += 16 + 4 + 4 + spf->samples_per_frame[0]*8*4;
@@ -2172,15 +2125,10 @@ static int mxf_write_header(AVFormatContext *s)
 
                 sc->signal_standard = 1;
             }
-<<<<<<< HEAD
             if (mxf->signal_standard >= 0)
                 sc->signal_standard = mxf->signal_standard;
-        } else if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-            if (st->codec->sample_rate != 48000) {
-=======
         } else if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             if (st->codecpar->sample_rate != 48000) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                 av_log(s, AV_LOG_ERROR, "only 48khz is implemented\n");
                 return -1;
             }
@@ -2198,12 +2146,12 @@ static int mxf_write_header(AVFormatContext *s)
             } else if (s->oformat == &ff_mxf_opatom_muxer) {
                 AVRational tbc = av_inv_q(mxf->audio_edit_rate);
 
-                if (st->codec->codec_id != AV_CODEC_ID_PCM_S16LE &&
-                    st->codec->codec_id != AV_CODEC_ID_PCM_S24LE) {
+                if (st->codecpar->codec_id != AV_CODEC_ID_PCM_S16LE &&
+                    st->codecpar->codec_id != AV_CODEC_ID_PCM_S24LE) {
                     av_log(s, AV_LOG_ERROR, "Only pcm_s16le and pcm_s24le audio codecs are implemented\n");
                     return AVERROR_PATCHWELCOME;
                 }
-                if (st->codec->channels != 1) {
+                if (st->codecpar->channels != 1) {
                     av_log(s, AV_LOG_ERROR, "MXF OPAtom only supports single channel audio\n");
                     return AVERROR(EINVAL);
                 }
@@ -2219,7 +2167,7 @@ static int mxf_write_header(AVFormatContext *s)
                     return ret;
 
                 mxf->timecode_base = (tbc.den + tbc.num/2) / tbc.num;
-                mxf->edit_unit_byte_count = (av_get_bits_per_sample(st->codec->codec_id) * st->codec->channels) >> 3;
+                mxf->edit_unit_byte_count = (av_get_bits_per_sample(st->codecpar->codec_id) * st->codecpar->channels) >> 3;
                 sc->index = 2;
             } else {
                 mxf->slice_count = 1;
@@ -2332,12 +2280,8 @@ static void mxf_write_d10_video_packet(AVFormatContext *s, AVStream *st, AVPacke
 {
     MXFContext *mxf = s->priv_data;
     AVIOContext *pb = s->pb;
-<<<<<<< HEAD
     MXFStreamContext *sc = st->priv_data;
     int packet_size = (uint64_t)sc->video_bit_rate*mxf->time_base.num /
-=======
-    int packet_size = (uint64_t)st->codecpar->bit_rate*mxf->time_base.num /
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         (8*mxf->time_base.den); // frame size
     int pad;
 
@@ -2467,17 +2411,17 @@ static int mxf_write_packet(AVFormatContext *s, AVPacket *pkt)
             av_log(s, AV_LOG_ERROR, "could not get mpeg2 profile and level\n");
             return -1;
         }
-    } else if (st->codec->codec_id == AV_CODEC_ID_DNXHD) {
+    } else if (st->codecpar->codec_id == AV_CODEC_ID_DNXHD) {
         if (!mxf_parse_dnxhd_frame(s, st, pkt)) {
             av_log(s, AV_LOG_ERROR, "could not get dnxhd profile\n");
             return -1;
         }
-    } else if (st->codec->codec_id == AV_CODEC_ID_DVVIDEO) {
+    } else if (st->codecpar->codec_id == AV_CODEC_ID_DVVIDEO) {
         if (!mxf_parse_dv_frame(s, st, pkt)) {
             av_log(s, AV_LOG_ERROR, "could not get dv profile\n");
             return -1;
         }
-    } else if (st->codec->codec_id == AV_CODEC_ID_H264) {
+    } else if (st->codecpar->codec_id == AV_CODEC_ID_H264) {
         if (!mxf_parse_h264_frame(s, st, pkt, &ie)) {
             av_log(s, AV_LOG_ERROR, "could not get h264 profile\n");
             return -1;
