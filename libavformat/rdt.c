@@ -448,11 +448,7 @@ real_parse_asm_rule(AVStream *st, const char *p, const char *end)
 {
     do {
         /* can be either averagebandwidth= or AverageBandwidth= */
-<<<<<<< HEAD
-        if (sscanf(p, " %*1[Aa]verage%*1[Bb]andwidth=%"SCNd64, &st->codec->bit_rate) == 1)
-=======
-        if (sscanf(p, " %*1[Aa]verage%*1[Bb]andwidth=%d", &st->codecpar->bit_rate) == 1)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        if (sscanf(p, " %*1[Aa]verage%*1[Bb]andwidth=%"SCNd64, &st->codecpar->bit_rate) == 1)
             break;
         if (!(p = strchr(p, ',')) || p > end)
             p = end;
