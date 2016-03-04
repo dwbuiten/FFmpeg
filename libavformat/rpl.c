@@ -170,16 +170,9 @@ static int rpl_read_header(AVFormatContext *s)
             vst->codecpar->codec_id = AV_CODEC_ID_ESCAPE130;
             break;
         default:
-<<<<<<< HEAD
             avpriv_report_missing_feature(s, "Video format %i",
-                                          vst->codec->codec_tag);
-            vst->codec->codec_id = AV_CODEC_ID_NONE;
-=======
-            av_log(s, AV_LOG_WARNING,
-                   "RPL video format %i not supported yet!\n",
-                   vst->codecpar->codec_tag);
+                                          vst->codecpar->codec_tag);
             vst->codecpar->codec_id = AV_CODEC_ID_NONE;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
 
     // Audio headers
@@ -228,19 +221,10 @@ static int rpl_read_header(AVFormatContext *s)
                 }
                 break;
         }
-<<<<<<< HEAD
-        if (ast->codec->codec_id == AV_CODEC_ID_NONE)
+        if (ast->codecpar->codec_id == AV_CODEC_ID_NONE)
             avpriv_request_sample(s, "Audio format %"PRId32,
                                   audio_format);
-        avpriv_set_pts_info(ast, 32, 1, ast->codec->bit_rate);
-=======
-        if (ast->codecpar->codec_id == AV_CODEC_ID_NONE) {
-            av_log(s, AV_LOG_WARNING,
-                   "RPL audio format %"PRId32" not supported yet!\n",
-                   audio_format);
-        }
         avpriv_set_pts_info(ast, 32, 1, ast->codecpar->bit_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     } else {
         for (i = 0; i < 3; i++)
             error |= read_line(pb, line, sizeof(line));
