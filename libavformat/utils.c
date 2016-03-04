@@ -4008,7 +4008,6 @@ FF_ENABLE_DEPRECATION_WARNINGS
     st->info->fps_first_dts = AV_NOPTS_VALUE;
     st->info->fps_last_dts  = AV_NOPTS_VALUE;
 
-
     st->inject_global_side_data = s->internal->inject_global_side_data;
 
 #if FF_API_LAVF_AVCTX
