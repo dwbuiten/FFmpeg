@@ -117,24 +117,24 @@ AVRational ff_choose_timebase(AVFormatContext *s, AVStream *st, int min_precisio
 
 enum AVChromaLocation ff_choose_chroma_location(AVFormatContext *s, AVStream *st)
 {
-    AVCodecContext *avctx = st->codec;
-    const AVPixFmtDescriptor *pix_desc = av_pix_fmt_desc_get(avctx->pix_fmt);
+    AVCodecParameters *par = st->codecpar;
+    const AVPixFmtDescriptor *pix_desc = av_pix_fmt_desc_get(par->format);
 
-    if (avctx->chroma_sample_location != AVCHROMA_LOC_UNSPECIFIED)
-        return avctx->chroma_sample_location;
+    if (par->chroma_location != AVCHROMA_LOC_UNSPECIFIED)
+        return par->chroma_location;
 
     if (pix_desc) {
         if (pix_desc->log2_chroma_h == 0) {
             return AVCHROMA_LOC_TOPLEFT;
         } else if (pix_desc->log2_chroma_w == 1 && pix_desc->log2_chroma_h == 1) {
-            if (avctx->field_order == AV_FIELD_UNKNOWN || avctx->field_order == AV_FIELD_PROGRESSIVE) {
-                switch (avctx->codec_id) {
+            if (par->field_order == AV_FIELD_UNKNOWN || par->field_order == AV_FIELD_PROGRESSIVE) {
+                switch (par->codec_id) {
                 case AV_CODEC_ID_MJPEG:
                 case AV_CODEC_ID_MPEG1VIDEO: return AVCHROMA_LOC_CENTER;
                 }
             }
-            if (avctx->field_order == AV_FIELD_UNKNOWN || avctx->field_order != AV_FIELD_PROGRESSIVE) {
-                switch (avctx->codec_id) {
+            if (par->field_order == AV_FIELD_UNKNOWN || par->field_order != AV_FIELD_PROGRESSIVE) {
+                switch (par->codec_id) {
                 case AV_CODEC_ID_MPEG2VIDEO: return AVCHROMA_LOC_LEFT;
                 }
             }
@@ -254,7 +254,6 @@ static int init_muxer(AVFormatContext *s, AVDictionary **options)
     if (s->nb_streams && s->streams[0]->codec->flags & AV_CODEC_FLAG_BITEXACT) {
         if (!(s->flags & AVFMT_FLAG_BITEXACT)) {
 #if FF_API_LAVF_BITEXACT
-<<<<<<< HEAD
             av_log(s, AV_LOG_WARNING,
                    "Setting the AVFormatContext to bitexact mode, because "
                    "the AVCodecContext is in that mode. This behavior will "
@@ -266,12 +265,6 @@ static int init_muxer(AVFormatContext *s, AVDictionary **options)
                    "The AVFormatContext is not in set to bitexact mode, only "
                    "the AVCodecContext. If this is not intended, set "
                    "AVFormatContext.flags |= AVFMT_FLAG_BITEXACT.\n");
-=======
-FF_DISABLE_DEPRECATION_WARNINGS
-    if (s->nb_streams && s->streams[0]->codec->flags & AV_CODEC_FLAG_BITEXACT)
-        s->flags |= AVFMT_FLAG_BITEXACT;
-FF_ENABLE_DEPRECATION_WARNINGS
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 #endif
         }
     }
@@ -338,33 +331,18 @@ FF_ENABLE_DEPRECATION_WARNINGS
                 ret = AVERROR(EINVAL);
                 goto fail;
             }
-<<<<<<< HEAD
-            if (av_cmp_q(st->sample_aspect_ratio, codec->sample_aspect_ratio)
-                && fabs(av_q2d(st->sample_aspect_ratio) - av_q2d(codec->sample_aspect_ratio)) > 0.004*av_q2d(st->sample_aspect_ratio)
+            if (av_cmp_q(st->sample_aspect_ratio, par->sample_aspect_ratio)
+                && fabs(av_q2d(st->sample_aspect_ratio) - av_q2d(par->sample_aspect_ratio)) > 0.004*av_q2d(st->sample_aspect_ratio)
             ) {
                 if (st->sample_aspect_ratio.num != 0 &&
                     st->sample_aspect_ratio.den != 0 &&
-                    codec->sample_aspect_ratio.num != 0 &&
-                    codec->sample_aspect_ratio.den != 0) {
+                    par->sample_aspect_ratio.num != 0 &&
+                    par->sample_aspect_ratio.den != 0) {
                     av_log(s, AV_LOG_ERROR, "Aspect ratio mismatch between muxer "
                            "(%d/%d) and encoder layer (%d/%d)\n",
                            st->sample_aspect_ratio.num, st->sample_aspect_ratio.den,
-                           codec->sample_aspect_ratio.num,
-                           codec->sample_aspect_ratio.den);
-=======
-
-            if (av_cmp_q(st->sample_aspect_ratio,
-                         par->sample_aspect_ratio)) {
-                if (st->sample_aspect_ratio.num != 0 &&
-                    st->sample_aspect_ratio.den != 0 &&
-                    par->sample_aspect_ratio.den != 0 &&
-                    par->sample_aspect_ratio.den != 0) {
-                    av_log(s, AV_LOG_ERROR, "Aspect ratio mismatch between muxer "
-                            "(%d/%d) and encoder layer (%d/%d)\n",
-                            st->sample_aspect_ratio.num, st->sample_aspect_ratio.den,
-                            par->sample_aspect_ratio.num,
-                            par->sample_aspect_ratio.den);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                           par->sample_aspect_ratio.num,
+                           par->sample_aspect_ratio.den);
                     ret = AVERROR(EINVAL);
                     goto fail;
                 }
@@ -377,41 +355,23 @@ FF_ENABLE_DEPRECATION_WARNINGS
             st->internal->reorder = 1;
 
         if (of->codec_tag) {
-<<<<<<< HEAD
-            if (   codec->codec_tag
-                && codec->codec_id == AV_CODEC_ID_RAWVIDEO
-                && (   av_codec_get_tag(of->codec_tag, codec->codec_id) == 0
-                    || av_codec_get_tag(of->codec_tag, codec->codec_id) == MKTAG('r', 'a', 'w', ' '))
+            if (   par->codec_tag
+                && par->codec_id == AV_CODEC_ID_RAWVIDEO
+                && (   av_codec_get_tag(of->codec_tag, par->codec_id) == 0
+                    || av_codec_get_tag(of->codec_tag, par->codec_id) == MKTAG('r', 'a', 'w', ' '))
                 && !validate_codec_tag(s, st)) {
                 // the current rawvideo encoding system ends up setting
                 // the wrong codec_tag for avi/mov, we override it here
-                codec->codec_tag = 0;
-=======
-            if (par->codec_tag &&
-                par->codec_id == AV_CODEC_ID_RAWVIDEO &&
-                !av_codec_get_tag(of->codec_tag, par->codec_id) &&
-                !validate_codec_tag(s, st)) {
-                // the current rawvideo encoding system ends up setting
-                // the wrong codec_tag for avi, we override it here
                 par->codec_tag = 0;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             }
             if (par->codec_tag) {
                 if (!validate_codec_tag(s, st)) {
-<<<<<<< HEAD
                     char tagbuf[32], tagbuf2[32];
-                    av_get_codec_tag_string(tagbuf, sizeof(tagbuf), codec->codec_tag);
-                    av_get_codec_tag_string(tagbuf2, sizeof(tagbuf2), av_codec_get_tag(s->oformat->codec_tag, codec->codec_id));
+                    av_get_codec_tag_string(tagbuf, sizeof(tagbuf), par->codec_tag);
+                    av_get_codec_tag_string(tagbuf2, sizeof(tagbuf2), av_codec_get_tag(s->oformat->codec_tag, par->codec_id));
                     av_log(s, AV_LOG_ERROR,
                            "Tag %s/0x%08x incompatible with output codec id '%d' (%s)\n",
-                           tagbuf, codec->codec_tag, codec->codec_id, tagbuf2);
-=======
-                    char tagbuf[32];
-                    av_get_codec_tag_string(tagbuf, sizeof(tagbuf), par->codec_tag);
-                    av_log(s, AV_LOG_ERROR,
-                           "Tag %s/0x%08x incompatible with output codec id '%d'\n",
-                           tagbuf, par->codec_tag, par->codec_id);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                           tagbuf, par->codec_tag, par->codec_id, tagbuf2);
                     ret = AVERROR_INVALIDDATA;
                     goto fail;
                 }
@@ -475,7 +435,7 @@ static int init_pts(AVFormatContext *s)
         int64_t den = AV_NOPTS_VALUE;
         st = s->streams[i];
 
-        switch (st->codec->codec_type) {
+        switch (st->codecpar->codec_type) {
         case AVMEDIA_TYPE_AUDIO:
             den = (int64_t)st->time_base.num * st->codec->sample_rate;
             break;
@@ -909,7 +869,7 @@ int ff_interleave_add_packet(AVFormatContext *s, AVPacket *pkt,
             st->interleaver_chunk_size      = 0;
             this_pktl->pkt.flags |= CHUNK_START;
             if (max && st->interleaver_chunk_duration > max) {
-                int64_t syncoffset = (st->codec->codec_type == AVMEDIA_TYPE_VIDEO)*max/2;
+                int64_t syncoffset = (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)*max/2;
                 int64_t syncto = av_rescale(pkt->dts + syncoffset, 1, max)*max - syncoffset;
 
                 st->interleaver_chunk_duration += (pkt->dts - syncto)/8 - max;
@@ -954,12 +914,12 @@ static int interleave_compare_dts(AVFormatContext *s, AVPacket *next,
     AVStream *st2 = s->streams[next->stream_index];
     int comp      = av_compare_ts(next->dts, st2->time_base, pkt->dts,
                                   st->time_base);
-    if (s->audio_preload && ((st->codec->codec_type == AVMEDIA_TYPE_AUDIO) != (st2->codec->codec_type == AVMEDIA_TYPE_AUDIO))) {
-        int64_t ts = av_rescale_q(pkt ->dts, st ->time_base, AV_TIME_BASE_Q) - s->audio_preload*(st ->codec->codec_type == AVMEDIA_TYPE_AUDIO);
-        int64_t ts2= av_rescale_q(next->dts, st2->time_base, AV_TIME_BASE_Q) - s->audio_preload*(st2->codec->codec_type == AVMEDIA_TYPE_AUDIO);
+    if (s->audio_preload && ((st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) != (st2->codecpar->codec_type == AVMEDIA_TYPE_AUDIO))) {
+        int64_t ts = av_rescale_q(pkt ->dts, st ->time_base, AV_TIME_BASE_Q) - s->audio_preload*(st ->codecpar->codec_type == AVMEDIA_TYPE_AUDIO);
+        int64_t ts2= av_rescale_q(next->dts, st2->time_base, AV_TIME_BASE_Q) - s->audio_preload*(st2->codecpar->codec_type == AVMEDIA_TYPE_AUDIO);
         if (ts == ts2) {
-            ts= ( pkt ->dts* st->time_base.num*AV_TIME_BASE - s->audio_preload*(int64_t)(st ->codec->codec_type == AVMEDIA_TYPE_AUDIO)* st->time_base.den)*st2->time_base.den
-               -( next->dts*st2->time_base.num*AV_TIME_BASE - s->audio_preload*(int64_t)(st2->codec->codec_type == AVMEDIA_TYPE_AUDIO)*st2->time_base.den)* st->time_base.den;
+            ts= ( pkt ->dts* st->time_base.num*AV_TIME_BASE - s->audio_preload*(int64_t)(st ->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)* st->time_base.den)*st2->time_base.den
+               -( next->dts*st2->time_base.num*AV_TIME_BASE - s->audio_preload*(int64_t)(st2->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)*st2->time_base.den)* st->time_base.den;
             ts2=0;
         }
         comp= (ts>ts2) - (ts<ts2);
@@ -986,9 +946,9 @@ int ff_interleave_packet_per_dts(AVFormatContext *s, AVPacket *out,
     for (i = 0; i < s->nb_streams; i++) {
         if (s->streams[i]->last_in_packet_buffer) {
             ++stream_count;
-        } else if (s->streams[i]->codec->codec_type != AVMEDIA_TYPE_ATTACHMENT &&
-                   s->streams[i]->codec->codec_id != AV_CODEC_ID_VP8 &&
-                   s->streams[i]->codec->codec_id != AV_CODEC_ID_VP9) {
+        } else if (s->streams[i]->codecpar->codec_type != AVMEDIA_TYPE_ATTACHMENT &&
+                   s->streams[i]->codecpar->codec_id != AV_CODEC_ID_VP8 &&
+                   s->streams[i]->codecpar->codec_id != AV_CODEC_ID_VP9) {
             ++noninterleaved_count;
         }
     }
