@@ -50,11 +50,7 @@ static int pcm_read_header(AVFormatContext *s)
     st->codecpar->bits_per_coded_sample =
         av_get_bits_per_sample(st->codecpar->codec_id);
 
-<<<<<<< HEAD
-    av_assert0(st->codec->bits_per_coded_sample > 0);
-=======
-    assert(st->codecpar->bits_per_coded_sample > 0);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    av_assert0(st->codecpar->bits_per_coded_sample > 0);
 
     st->codecpar->block_align =
         st->codecpar->bits_per_coded_sample * st->codecpar->channels / 8;
@@ -63,34 +59,6 @@ static int pcm_read_header(AVFormatContext *s)
     return 0;
 }
 
-<<<<<<< HEAD
-=======
-static int pcm_read_packet(AVFormatContext *s, AVPacket *pkt)
-{
-    int ret, size, bps;
-    //    AVStream *st = s->streams[0];
-
-    size= RAW_SAMPLES*s->streams[0]->codecpar->block_align;
-
-    ret= av_get_packet(s->pb, pkt, size);
-
-    pkt->stream_index = 0;
-    if (ret < 0)
-        return ret;
-
-    bps= av_get_bits_per_sample(s->streams[0]->codecpar->codec_id);
-    if (!bps) {
-        av_log(s, AV_LOG_ERROR, "Unknown number of bytes per sample.\n");
-        return AVERROR(EINVAL);
-    }
-
-    pkt->dts=
-    pkt->pts= pkt->pos*8 / (bps * s->streams[0]->codecpar->channels);
-
-    return ret;
-}
-
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 static const AVOption pcm_options[] = {
     { "sample_rate", "", offsetof(PCMAudioDemuxerContext, sample_rate), AV_OPT_TYPE_INT, {.i64 = 44100}, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
     { "channels",    "", offsetof(PCMAudioDemuxerContext, channels),    AV_OPT_TYPE_INT, {.i64 = 1}, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
