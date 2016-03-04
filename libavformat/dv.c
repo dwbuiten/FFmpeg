@@ -291,14 +291,6 @@ static int dv_extract_video_info(DVDemuxContext *c, const uint8_t *frame)
         avpriv_set_pts_info(c->vst, 64, c->sys->time_base.num,
                             c->sys->time_base.den);
         c->vst->avg_frame_rate = av_inv_q(c->vst->time_base);
-<<<<<<< HEAD
-=======
-        if (!par->width) {
-            par->width  = c->sys->width;
-            par->height = c->sys->height;
-        }
-        par->format = c->sys->pix_fmt;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
         /* finding out SAR is a little bit messy */
         vsc_pack = dv_extract_pack(frame, dv_video_control);
@@ -429,13 +421,8 @@ static int64_t dv_frame_offset(AVFormatContext *s, DVDemuxContext *c,
                                int64_t timestamp, int flags)
 {
     // FIXME: sys may be wrong if last dv_read_packet() failed (buffer is junk)
-<<<<<<< HEAD
-    const AVDVProfile *sys = av_dv_codec_profile2(c->vst->codec->coded_width, c->vst->codec->coded_height,
-                                                  c->vst->codec->pix_fmt, c->vst->codec->time_base);
-=======
-    const AVDVProfile *sys = av_dv_codec_profile(c->vst->codecpar->width, c->vst->codecpar->height,
-                                                 c->vst->codecpar->format);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    const AVDVProfile *sys = av_dv_codec_profile2(c->vst->codecpar->width, c->vst->codecpar->height,
+                                                  c->vst->codecpar->format, c->vst->time_base);
     int64_t offset;
     int64_t size       = avio_size(s->pb) - s->internal->data_offset;
     int64_t max_offset = ((size - 1) / sys->frame_size) * sys->frame_size;
@@ -456,15 +443,10 @@ void ff_dv_offset_reset(DVDemuxContext *c, int64_t frame_offset)
     if (c->ach) {
         if (c->sys) {
         c->abytes = av_rescale_q(c->frames, c->sys->time_base,
-<<<<<<< HEAD
-                                 (AVRational) { 8, c->ast[0]->codec->bit_rate });
+                                 (AVRational) { 8, c->ast[0]->codecpar->bit_rate });
         } else
             av_log(c->fctx, AV_LOG_ERROR, "cannot adjust audio bytes\n");
     }
-=======
-                                 (AVRational) { 8, c->ast[0]->codecpar->bit_rate });
-
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     c->audio_pkt[0].size = c->audio_pkt[1].size = 0;
     c->audio_pkt[2].size = c->audio_pkt[3].size = 0;
 }
