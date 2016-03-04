@@ -461,20 +461,10 @@ static int decode_stream_header(NUTContext *nut)
     st->codec->has_b_frames = stc->decode_delay;
     ffio_read_varlen(bc); // stream flags
 
-<<<<<<< HEAD
-    GET_V(st->codec->extradata_size, tmp < (1 << 30));
-    if (st->codec->extradata_size) {
-        if (ff_get_extradata(st->codec, bc, st->codec->extradata_size) < 0)
-            return AVERROR(ENOMEM);
-=======
     GET_V(st->codecpar->extradata_size, tmp < (1 << 30));
     if (st->codecpar->extradata_size) {
-        st->codecpar->extradata = av_mallocz(st->codecpar->extradata_size +
-                                             AV_INPUT_BUFFER_PADDING_SIZE);
-        if (!st->codecpar->extradata)
+        if (ff_get_extradata(st->codecpar, bc, st->codecpar->extradata_size) < 0)
             return AVERROR(ENOMEM);
-        avio_read(bc, st->codecpar->extradata, st->codecpar->extradata_size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
 
     if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
@@ -505,9 +495,9 @@ static int decode_stream_header(NUTContext *nut)
                         stc->time_base->den);
     return 0;
 fail:
-    if (st && st->codec) {
-        av_freep(&st->codec->extradata);
-        st->codec->extradata_size = 0;
+    if (st && st->codecpar) {
+        av_freep(&st->codecpar->extradata);
+        st->codecpar->extradata_size = 0;
     }
     return ret;
 }
