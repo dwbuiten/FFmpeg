@@ -166,21 +166,14 @@ static int sdp_parse_fmtp_config_h264(AVFormatContext *s,
             parse_profile_level_id(s, h264_data, value);
     } else if (!strcmp(attr, "sprop-parameter-sets")) {
         int ret;
-<<<<<<< HEAD
         if (value[strlen(value) - 1] == ',') {
             av_log(s, AV_LOG_WARNING, "Missing PPS in sprop-parameter-sets, ignoring\n");
             return 0;
         }
-        codec->extradata_size = 0;
-        av_freep(&codec->extradata);
-        ret = ff_h264_parse_sprop_parameter_sets(s, &codec->extradata,
-                                                 &codec->extradata_size, value);
-=======
         par->extradata_size = 0;
         av_freep(&par->extradata);
         ret = ff_h264_parse_sprop_parameter_sets(s, &par->extradata,
                                                  &par->extradata_size, value);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         av_log(s, AV_LOG_DEBUG, "Extradata set to %p (size: %d)\n",
                par->extradata, par->extradata_size);
         return ret;

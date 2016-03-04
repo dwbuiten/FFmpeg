@@ -232,13 +232,8 @@ parse_packed_headers(AVFormatContext *s,
     uint8_t *ptr;
 
     if (packed_headers_end - packed_headers < 9) {
-<<<<<<< HEAD
-        av_log(codec, AV_LOG_ERROR,
-               "Invalid %"PTRDIFF_SPECIFIER" byte packed header.",
-=======
         av_log(s, AV_LOG_ERROR,
-               "Invalid %td byte packed header.",
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+               "Invalid %"PTRDIFF_SPECIFIER" byte packed header.",
                packed_headers_end - packed_headers);
         return AVERROR_INVALIDDATA;
     }
@@ -259,13 +254,8 @@ parse_packed_headers(AVFormatContext *s,
 
     if (packed_headers_end - packed_headers != length ||
         length1 > length || length2 > length - length1) {
-<<<<<<< HEAD
-        av_log(codec, AV_LOG_ERROR,
-               "Bad packed header lengths (%d,%d,%"PTRDIFF_SPECIFIER",%d)\n", length1,
-=======
         av_log(s, AV_LOG_ERROR,
-               "Bad packed header lengths (%d,%d,%td,%d)\n", length1,
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+               "Bad packed header lengths (%d,%d,%"PTRDIFF_SPECIFIER",%d)\n", length1,
                length2, packed_headers_end - packed_headers, length);
         return AVERROR_INVALIDDATA;
     }
@@ -276,17 +266,11 @@ parse_packed_headers(AVFormatContext *s,
      * -- AV_INPUT_BUFFER_PADDING_SIZE required */
     extradata_alloc = length + length/255 + 3 + AV_INPUT_BUFFER_PADDING_SIZE;
 
-<<<<<<< HEAD
-    if (ff_alloc_extradata(codec, extradata_alloc)) {
-        av_log(codec, AV_LOG_ERROR, "Out of memory\n");
-=======
-    ptr = par->extradata = av_malloc(extradata_alloc);
-    if (!ptr) {
+    if (ff_alloc_extradata(par, extradata_alloc)) {
         av_log(s, AV_LOG_ERROR, "Out of memory\n");
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         return AVERROR(ENOMEM);
     }
-    ptr = codec->extradata;
+    ptr = par->extradata;
     *ptr++ = 2;
     ptr += av_xiphlacing(ptr, length1);
     ptr += av_xiphlacing(ptr, length2);

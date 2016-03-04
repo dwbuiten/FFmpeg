@@ -101,19 +101,10 @@ static int parse_fmtp_config(AVCodecParameters *par, char *value)
 {
     /* decode the hexa encoded parameter */
     int len = ff_hex_to_data(NULL, value);
-<<<<<<< HEAD
-    av_freep(&codec->extradata);
-    if (ff_alloc_extradata(codec, len))
+    av_freep(&par->extradata);
+    if (ff_alloc_extradata(par, len))
         return AVERROR(ENOMEM);
-    ff_hex_to_data(codec->extradata, value);
-=======
-    av_free(par->extradata);
-    par->extradata = av_mallocz(len + AV_INPUT_BUFFER_PADDING_SIZE);
-    if (!par->extradata)
-        return AVERROR(ENOMEM);
-    par->extradata_size = len;
     ff_hex_to_data(par->extradata, value);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     return 0;
 }
 

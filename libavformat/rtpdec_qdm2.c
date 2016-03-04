@@ -104,15 +104,8 @@ static int qdm2_parse_config(PayloadContext *qdm, AVStream *st,
             case 4: /* stream with extradata */
                 if (item_len < 30)
                     return AVERROR_INVALIDDATA;
-<<<<<<< HEAD
-                av_freep(&st->codec->extradata);
-                if (ff_alloc_extradata(st->codec, 26 + item_len)) {
-=======
                 av_freep(&st->codecpar->extradata);
-                st->codecpar->extradata_size = 26 + item_len;
-                if (!(st->codecpar->extradata = av_mallocz(st->codecpar->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE))) {
-                    st->codecpar->extradata_size = 0;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                if (ff_alloc_extradata(st->codecpar, 26 + item_len)) {
                     return AVERROR(ENOMEM);
                 }
                 AV_WB32(st->codecpar->extradata, 12);

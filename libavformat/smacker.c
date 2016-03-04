@@ -227,14 +227,7 @@ static int smacker_read_header(AVFormatContext *s)
 
 
     /* load trees to extradata, they will be unpacked by decoder */
-<<<<<<< HEAD
-    if(ff_alloc_extradata(st->codec, smk->treesize + 16)){
-=======
-    st->codecpar->extradata = av_mallocz(smk->treesize + 16 +
-                                         AV_INPUT_BUFFER_PADDING_SIZE);
-    st->codecpar->extradata_size = smk->treesize + 16;
-    if (!st->codecpar->extradata) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    if(ff_alloc_extradata(st->codecpar, smk->treesize + 16)){
         av_log(s, AV_LOG_ERROR,
                "Cannot allocate %"PRIu32" bytes of extradata\n",
                smk->treesize + 16);
@@ -242,17 +235,10 @@ static int smacker_read_header(AVFormatContext *s)
         av_freep(&smk->frm_flags);
         return AVERROR(ENOMEM);
     }
-<<<<<<< HEAD
-    ret = avio_read(pb, st->codec->extradata + 16, st->codec->extradata_size - 16);
-    if(ret != st->codec->extradata_size - 16){
-        av_freep(&smk->frm_size);
-        av_freep(&smk->frm_flags);
-=======
     ret = avio_read(pb, st->codecpar->extradata + 16, st->codecpar->extradata_size - 16);
     if(ret != st->codecpar->extradata_size - 16){
-        av_free(smk->frm_size);
-        av_free(smk->frm_flags);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        av_freep(&smk->frm_size);
+        av_freep(&smk->frm_flags);
         return AVERROR(EIO);
     }
     ((int32_t*)st->codecpar->extradata)[0] = av_le2ne32(smk->mmap_size);

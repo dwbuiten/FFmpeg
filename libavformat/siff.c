@@ -123,23 +123,14 @@ static int siff_parse_vbv1(AVFormatContext *s, SIFFContext *c, AVIOContext *pb)
     st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
-<<<<<<< HEAD
-    st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    st->codec->codec_id   = AV_CODEC_ID_VB;
-    st->codec->codec_tag  = MKTAG('V', 'B', 'V', '1');
-    st->codec->width      = width;
-    st->codec->height     = height;
-    st->codec->pix_fmt    = AV_PIX_FMT_PAL8;
-    st->nb_frames         =
-    st->duration          = c->frames;
-=======
     st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codecpar->codec_id   = AV_CODEC_ID_VB;
     st->codecpar->codec_tag  = MKTAG('V', 'B', 'V', '1');
     st->codecpar->width      = width;
     st->codecpar->height     = height;
     st->codecpar->format     = AV_PIX_FMT_PAL8;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    st->nb_frames            =
+    st->duration             = c->frames;
     avpriv_set_pts_info(st, 16, 1, 12);
 
     c->cur_frame = 0;

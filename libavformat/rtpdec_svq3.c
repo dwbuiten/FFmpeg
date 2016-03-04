@@ -62,23 +62,12 @@ static int svq3_parse_packet (AVFormatContext *s, PayloadContext *sv,
         av_freep(&st->codecpar->extradata);
         st->codecpar->extradata_size = 0;
 
-<<<<<<< HEAD
-        if (len < 2 || ff_alloc_extradata(st->codec, len + 8))
+        if (len < 2 || ff_alloc_extradata(st->codecpar, len + 8))
             return AVERROR_INVALIDDATA;
 
-        memcpy(st->codec->extradata, "SEQH", 4);
-        AV_WB32(st->codec->extradata + 4, len);
-        memcpy(st->codec->extradata + 8, buf, len);
-=======
-        if (len < 2 || !(st->codecpar->extradata =
-                         av_malloc(len + 8 + AV_INPUT_BUFFER_PADDING_SIZE)))
-            return AVERROR_INVALIDDATA;
-
-        st->codecpar->extradata_size = len + 8;
         memcpy(st->codecpar->extradata, "SEQH", 4);
         AV_WB32(st->codecpar->extradata + 4, len);
         memcpy(st->codecpar->extradata + 8, buf, len);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
         /* We set codec_id to AV_CODEC_ID_NONE initially to
          * delay decoder initialization since extradata is

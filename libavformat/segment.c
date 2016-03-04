@@ -162,24 +162,20 @@ static int segment_mux_init(AVFormatContext *s)
 
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *st;
-        AVCodecContext *icodec, *ocodec;
+        AVCodecParameters *ipar, *opar;
 
         if (!(st = avformat_new_stream(oc, NULL)))
             return AVERROR(ENOMEM);
-<<<<<<< HEAD
-        icodec = s->streams[i]->codec;
-        ocodec = st->codec;
-        avcodec_copy_context(ocodec, icodec);
+        ipar = s->streams[i]->codecpar;
+        opar = st->codecpar;
+        avcodec_parameters_copy(opar, ipar);
         if (!oc->oformat->codec_tag ||
-            av_codec_get_id (oc->oformat->codec_tag, icodec->codec_tag) == ocodec->codec_id ||
-            av_codec_get_tag(oc->oformat->codec_tag, icodec->codec_id) <= 0) {
-            ocodec->codec_tag = icodec->codec_tag;
+            av_codec_get_id (oc->oformat->codec_tag, ipar->codec_tag) == opar->codec_id ||
+            av_codec_get_tag(oc->oformat->codec_tag, ipar->codec_id) <= 0) {
+            opar->codec_tag = ipar->codec_tag;
         } else {
-            ocodec->codec_tag = 0;
+            opar->codec_tag = 0;
         }
-=======
-        avcodec_parameters_copy(st->codecpar, s->streams[i]->codecpar);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         st->sample_aspect_ratio = s->streams[i]->sample_aspect_ratio;
         st->time_base = s->streams[i]->time_base;
         av_dict_copy(&st->metadata, s->streams[i]->metadata, 0);
@@ -560,7 +556,7 @@ static int select_reference_stream(AVFormatContext *s)
 
         /* select first index for each type */
         for (i = 0; i < s->nb_streams; i++) {
-            type = s->streams[i]->codec->codec_type;
+            type = s->streams[i]->codecpar->codec_type;
             if ((unsigned)type < AVMEDIA_TYPE_NB && type_index_map[type] == -1
                 /* ignore attached pictures/cover art streams */
                 && !(s->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC))
@@ -659,7 +655,6 @@ static int seg_write_header(AVFormatContext *s)
         }
     }
 
-<<<<<<< HEAD
     if (seg->list) {
         if (seg->list_type == LIST_TYPE_UNDEFINED) {
             if      (av_match_ext(seg->list, "csv" )) seg->list_type = LIST_TYPE_CSV;
@@ -678,17 +673,12 @@ static int seg_write_header(AVFormatContext *s)
     }
     if (seg->list_type == LIST_TYPE_EXT)
         av_log(s, AV_LOG_WARNING, "'ext' list type option is deprecated in favor of 'csv'\n");
-=======
-    for (i = 0; i < s->nb_streams; i++)
-        seg->has_video +=
-            (s->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     if ((ret = select_reference_stream(s)) < 0)
         goto fail;
     av_log(s, AV_LOG_VERBOSE, "Selected stream id:%d type:%s\n",
            seg->reference_stream_index,
-           av_get_media_type_string(s->streams[seg->reference_stream_index]->codec->codec_type));
+           av_get_media_type_string(s->streams[seg->reference_stream_index]->codecpar->codec_type));
 
     seg->oformat = av_guess_format(seg->format, s->filename, NULL);
 
@@ -784,7 +774,6 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
     if (!seg->avf)
         return AVERROR(EINVAL);
 
-<<<<<<< HEAD
     if (seg->times) {
         end_pts = seg->segment_count < seg->nb_times ?
             seg->times[seg->segment_count] : INT64_MAX;
@@ -806,11 +795,6 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
         } else {
             end_pts = seg->time * (seg->segment_count + 1);
         }
-=======
-    if (seg->has_video) {
-        can_split = st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
-                    pkt->flags & AV_PKT_FLAG_KEY;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
 
     ff_dlog(s, "packet stream:%d pts:%s pts_time:%s duration_time:%s is_key:%d frame:%d\n",

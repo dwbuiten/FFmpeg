@@ -97,13 +97,8 @@ static int rtp_write_header(AVFormatContext *s1)
         return AVERROR(EINVAL);
     }
     st = s1->streams[0];
-<<<<<<< HEAD
-    if (!is_supported(st->codec->codec_id)) {
-        av_log(s1, AV_LOG_ERROR, "Unsupported codec %s\n", avcodec_get_name(st->codec->codec_id));
-=======
     if (!is_supported(st->codecpar->codec_id)) {
-        av_log(s1, AV_LOG_ERROR, "Unsupported codec %x\n", st->codecpar->codec_id);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        av_log(s1, AV_LOG_ERROR, "Unsupported codec %s\n", avcodec_get_name(st->codecpar->codec_id));
 
         return -1;
     }

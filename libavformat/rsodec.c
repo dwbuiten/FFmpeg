@@ -59,49 +59,19 @@ static int rso_read_header(AVFormatContext *s)
         return AVERROR(ENOMEM);
 
     st->duration            = (size * 8) / bps;
-<<<<<<< HEAD
-    st->codec->codec_type   = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_tag    = id;
-    st->codec->codec_id     = codec;
-    st->codec->channels     = 1;
-    st->codec->channel_layout = AV_CH_LAYOUT_MONO;
-    st->codec->sample_rate  = rate;
-    st->codec->block_align  = 1;
-=======
     st->codecpar->codec_type   = AVMEDIA_TYPE_AUDIO;
     st->codecpar->codec_tag    = id;
     st->codecpar->codec_id     = codec;
     st->codecpar->channels     = 1;
     st->codecpar->channel_layout = AV_CH_LAYOUT_MONO;
     st->codecpar->sample_rate  = rate;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    st->codecpar->block_align  = 1;
 
     avpriv_set_pts_info(st, 64, 1, rate);
 
     return 0;
 }
 
-<<<<<<< HEAD
-=======
-#define BLOCK_SIZE 1024 /* in samples */
-
-static int rso_read_packet(AVFormatContext *s, AVPacket *pkt)
-{
-    int bps = av_get_bits_per_sample(s->streams[0]->codecpar->codec_id);
-    int ret = av_get_packet(s->pb, pkt, BLOCK_SIZE * bps >> 3);
-
-    if (ret < 0)
-        return ret;
-
-    pkt->stream_index = 0;
-
-    /* note: we need to modify the packet size here to handle the last packet */
-    pkt->size = ret;
-
-    return 0;
-}
-
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 AVInputFormat ff_rso_demuxer = {
     .name           =   "rso",
     .long_name      =   NULL_IF_CONFIG_SMALL("Lego Mindstorms RSO"),

@@ -111,22 +111,13 @@ static int smjpeg_read_header(AVFormatContext *s)
             vst = avformat_new_stream(s, 0);
             if (!vst)
                 return AVERROR(ENOMEM);
-<<<<<<< HEAD
-            vst->nb_frames         = avio_rb32(pb);
-            vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-            vst->codec->width      = avio_rb16(pb);
-            vst->codec->height     = avio_rb16(pb);
-            vst->codec->codec_tag  = avio_rl32(pb);
-            vst->codec->codec_id   = ff_codec_get_id(ff_codec_smjpeg_video_tags,
-                                                     vst->codec->codec_tag);
-=======
+            vst->nb_frames            = avio_rb32(pb);
             vst->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
             vst->codecpar->width      = avio_rb16(pb);
             vst->codecpar->height     = avio_rb16(pb);
             vst->codecpar->codec_tag  = avio_rl32(pb);
             vst->codecpar->codec_id   = ff_codec_get_id(ff_codec_smjpeg_video_tags,
                                                         vst->codecpar->codec_tag);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             vst->duration          = duration;
             sc->video_stream_index = vst->index;
             avpriv_set_pts_info(vst, 32, 1, 1000);
