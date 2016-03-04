@@ -121,26 +121,16 @@ static int read_header(AVFormatContext *s)
     avpriv_set_pts_info(vst, 64, fps_den, fps_num);
     vst->avg_frame_rate = av_inv_q(vst->time_base);
 
-<<<<<<< HEAD
-    vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    vst->codec->codec_id   = AV_CODEC_ID_BINKVIDEO;
-
-    if ((vst->codec->codec_tag & 0xFFFFFF) == MKTAG('K', 'B', '2', 0)) {
-        av_log(s, AV_LOG_WARNING, "Bink 2 video is not implemented\n");
-        vst->codec->codec_id = AV_CODEC_ID_NONE;
-    }
-
-    if (ff_get_extradata(vst->codec, pb, 4) < 0)
-        return AVERROR(ENOMEM);
-=======
     vst->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
     vst->codecpar->codec_id   = AV_CODEC_ID_BINKVIDEO;
-    vst->codecpar->extradata  = av_mallocz(4 + AV_INPUT_BUFFER_PADDING_SIZE);
-    if (!vst->codecpar->extradata)
+
+    if ((vst->codecpar->codec_tag & 0xFFFFFF) == MKTAG('K', 'B', '2', 0)) {
+        av_log(s, AV_LOG_WARNING, "Bink 2 video is not implemented\n");
+        vst->codecpar->codec_id = AV_CODEC_ID_NONE;
+    }
+
+    if (ff_get_extradata(vst->codecpar, pb, 4) < 0)
         return AVERROR(ENOMEM);
-    vst->codecpar->extradata_size = 4;
-    avio_read(pb, vst->codecpar->extradata, 4);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     bink->num_audio_tracks = avio_rl32(pb);
 
@@ -172,17 +162,9 @@ static int read_header(AVFormatContext *s)
                 ast->codecpar->channels       = 1;
                 ast->codecpar->channel_layout = AV_CH_LAYOUT_MONO;
             }
-<<<<<<< HEAD
-            if (ff_alloc_extradata(ast->codec, 4))
+            if (ff_alloc_extradata(ast->codecpar, 4))
                 return AVERROR(ENOMEM);
-            AV_WL32(ast->codec->extradata, vst->codec->codec_tag);
-=======
-            ast->codecpar->extradata = av_mallocz(4 + AV_INPUT_BUFFER_PADDING_SIZE);
-            if (!ast->codecpar->extradata)
-                return AVERROR(ENOMEM);
-            ast->codecpar->extradata_size = 4;
             AV_WL32(ast->codecpar->extradata, vst->codecpar->codec_tag);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         }
 
         for (i = 0; i < bink->num_audio_tracks; i++)

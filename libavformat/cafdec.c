@@ -69,15 +69,9 @@ static int read_desc_chunk(AVFormatContext *s)
         return AVERROR(ENOMEM);
 
     /* parse format description */
-<<<<<<< HEAD
-    st->codec->codec_type  = AVMEDIA_TYPE_AUDIO;
-    st->codec->sample_rate = av_int2double(avio_rb64(pb));
-    st->codec->codec_tag   = avio_rl32(pb);
-=======
     st->codecpar->codec_type  = AVMEDIA_TYPE_AUDIO;
     st->codecpar->sample_rate = av_int2double(avio_rb64(pb));
-    st->codecpar->codec_tag   = avio_rb32(pb);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    st->codecpar->codec_tag   = avio_rl32(pb);
     flags = avio_rb32(pb);
     caf->bytes_per_packet  = avio_rb32(pb);
     st->codecpar->block_align = caf->bytes_per_packet;
@@ -94,13 +88,8 @@ static int read_desc_chunk(AVFormatContext *s)
     }
 
     /* determine codec */
-<<<<<<< HEAD
-    if (st->codec->codec_tag == MKTAG('l','p','c','m'))
-        st->codec->codec_id = ff_mov_get_lpcm_codec_id(st->codec->bits_per_coded_sample, (flags ^ 0x2) | 0x4);
-=======
-    if (st->codecpar->codec_tag == MKBETAG('l','p','c','m'))
+    if (st->codecpar->codec_tag == MKTAG('l','p','c','m'))
         st->codecpar->codec_id = ff_mov_get_lpcm_codec_id(st->codecpar->bits_per_coded_sample, (flags ^ 0x2) | 0x4);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     else
         st->codecpar->codec_id = ff_codec_get_id(ff_codec_caf_tags, st->codecpar->codec_tag);
     return 0;
@@ -145,13 +134,8 @@ static int read_kuki_chunk(AVFormatContext *s, int64_t size)
             return AVERROR_INVALIDDATA;
         }
 
-<<<<<<< HEAD
-        av_freep(&st->codec->extradata);
-        if (ff_alloc_extradata(st->codec, ALAC_HEADER))
-=======
-        st->codecpar->extradata = av_mallocz(ALAC_HEADER + AV_INPUT_BUFFER_PADDING_SIZE);
-        if (!st->codecpar->extradata)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        av_freep(&st->codecpar->extradata);
+        if (ff_alloc_extradata(st->codecpar, ALAC_HEADER))
             return AVERROR(ENOMEM);
 
         /* For the old style cookie, we skip 12 bytes, then read 36 bytes.
@@ -164,48 +148,28 @@ static int read_kuki_chunk(AVFormatContext *s, int64_t size)
                 av_freep(&st->codecpar->extradata);
                 return AVERROR_INVALIDDATA;
             }
-<<<<<<< HEAD
-            if (avio_read(pb, st->codec->extradata, ALAC_HEADER) != ALAC_HEADER) {
+            if (avio_read(pb, st->codecpar->extradata, ALAC_HEADER) != ALAC_HEADER) {
                 av_log(s, AV_LOG_ERROR, "failed to read kuki header\n");
-                av_freep(&st->codec->extradata);
+                av_freep(&st->codecpar->extradata);
                 return AVERROR_INVALIDDATA;
             }
-            avio_skip(pb, size - ALAC_PREAMBLE - ALAC_HEADER);
-        } else {
-            AV_WB32(st->codec->extradata, 36);
-            memcpy(&st->codec->extradata[4], "alac", 4);
-            AV_WB32(&st->codec->extradata[8], 0);
-            memcpy(&st->codec->extradata[12], preamble, 12);
-            if (avio_read(pb, &st->codec->extradata[24], ALAC_NEW_KUKI - 12) != ALAC_NEW_KUKI - 12) {
-                av_log(s, AV_LOG_ERROR, "failed to read new kuki header\n");
-                av_freep(&st->codec->extradata);
-                return AVERROR_INVALIDDATA;
-            }
-            avio_skip(pb, size - ALAC_NEW_KUKI);
-        }
-    } else {
-        av_freep(&st->codec->extradata);
-        if (ff_get_extradata(st->codec, pb, size) < 0)
-            return AVERROR(ENOMEM);
-=======
-            avio_read(pb, st->codecpar->extradata, ALAC_HEADER);
             avio_skip(pb, size - ALAC_PREAMBLE - ALAC_HEADER);
         } else {
             AV_WB32(st->codecpar->extradata, 36);
             memcpy(&st->codecpar->extradata[4], "alac", 4);
             AV_WB32(&st->codecpar->extradata[8], 0);
             memcpy(&st->codecpar->extradata[12], preamble, 12);
-            avio_read(pb, &st->codecpar->extradata[24], ALAC_NEW_KUKI - 12);
+            if (avio_read(pb, &st->codecpar->extradata[24], ALAC_NEW_KUKI - 12) != ALAC_NEW_KUKI - 12) {
+                av_log(s, AV_LOG_ERROR, "failed to read new kuki header\n");
+                av_freep(&st->codecpar->extradata);
+                return AVERROR_INVALIDDATA;
+            }
             avio_skip(pb, size - ALAC_NEW_KUKI);
         }
-        st->codecpar->extradata_size = ALAC_HEADER;
     } else {
-        st->codecpar->extradata = av_mallocz(size + AV_INPUT_BUFFER_PADDING_SIZE);
-        if (!st->codecpar->extradata)
+        av_freep(&st->codecpar->extradata);
+        if (ff_get_extradata(st->codecpar, pb, size) < 0)
             return AVERROR(ENOMEM);
-        avio_read(pb, st->codecpar->extradata, size);
-        st->codecpar->extradata_size = size;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
 
     return 0;
@@ -358,14 +322,9 @@ static int read_header(AVFormatContext *s)
     if (caf->bytes_per_packet > 0 && caf->frames_per_packet > 0) {
         if (caf->data_size > 0)
             st->nb_frames = (caf->data_size / caf->bytes_per_packet) * caf->frames_per_packet;
-<<<<<<< HEAD
     } else if (st->nb_index_entries && st->duration > 0) {
-        st->codec->bit_rate = st->codec->sample_rate * caf->data_size * 8 /
-=======
-    } else if (st->nb_index_entries) {
         st->codecpar->bit_rate = st->codecpar->sample_rate * caf->data_size * 8 /
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
-                              st->duration;
+                                 st->duration;
     } else {
         av_log(s, AV_LOG_ERROR, "Missing packet table. It is required when "
                                 "block size or frame size are variable.\n");
