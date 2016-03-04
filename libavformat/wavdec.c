@@ -117,7 +117,7 @@ static int wav_probe(AVProbeData *p)
 
 static void handle_stream_probing(AVStream *st)
 {
-    if (st->codec->codec_id == AV_CODEC_ID_PCM_S16LE) {
+    if (st->codecpar->codec_id == AV_CODEC_ID_PCM_S16LE) {
         st->request_probe = AVPROBE_SCORE_EXTENSION;
         st->probe_packets = FFMIN(st->probe_packets, 32);
     }
@@ -134,18 +134,14 @@ static int wav_parse_fmt_tag(AVFormatContext *s, int64_t size, AVStream **st)
     if (!*st)
         return AVERROR(ENOMEM);
 
-<<<<<<< HEAD
-    ret = ff_get_wav_header(s, pb, (*st)->codec, size, wav->rifx);
-=======
-    ret = ff_get_wav_header(s, pb, (*st)->codecpar, size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    ret = ff_get_wav_header(s, pb, (*st)->codecpar, size, wav->rifx);
     if (ret < 0)
         return ret;
     handle_stream_probing(*st);
 
     (*st)->need_parsing = AVSTREAM_PARSE_FULL_RAW;
 
-    avpriv_set_pts_info(*st, 64, 1, (*st)->codec->sample_rate);
+    avpriv_set_pts_info(*st, 64, 1, (*st)->codecpar->sample_rate);
 
     return 0;
 }
@@ -162,16 +158,16 @@ static int wav_parse_xma2_tag(AVFormatContext *s, int64_t size, AVStream **st)
     if (!*st)
         return AVERROR(ENOMEM);
 
-    (*st)->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-    (*st)->codec->codec_id   = AV_CODEC_ID_XMA2;
-    (*st)->need_parsing      = AVSTREAM_PARSE_FULL_RAW;
+    (*st)->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+    (*st)->codecpar->codec_id   = AV_CODEC_ID_XMA2;
+    (*st)->need_parsing         = AVSTREAM_PARSE_FULL_RAW;
 
     avio_skip(pb, 1);
     num_streams = avio_r8(pb);
     if (size < 40 + num_streams * 4)
         return AVERROR_INVALIDDATA;
     avio_skip(pb, 10);
-    (*st)->codec->sample_rate = avio_rb32(pb);
+    (*st)->codecpar->sample_rate = avio_rb32(pb);
     avio_skip(pb, 12);
     (*st)->duration = avio_rb32(pb);
     avio_skip(pb, 8);
@@ -180,19 +176,15 @@ static int wav_parse_xma2_tag(AVFormatContext *s, int64_t size, AVStream **st)
         channels += avio_r8(pb);
         avio_skip(pb, 3);
     }
-    (*st)->codec->channels = channels;
+    (*st)->codecpar->channels = channels;
 
-    if ((*st)->codec->channels <= 0 || (*st)->codec->sample_rate <= 0)
+    if ((*st)->codecpar->channels <= 0 || (*st)->codecpar->sample_rate <= 0)
         return AVERROR_INVALIDDATA;
 
-<<<<<<< HEAD
-    avpriv_set_pts_info(*st, 64, 1, (*st)->codec->sample_rate);
-    if (ff_alloc_extradata((*st)->codec, 34))
-        return AVERROR(ENOMEM);
-    memset((*st)->codec->extradata, 0, 34);
-=======
     avpriv_set_pts_info(*st, 64, 1, (*st)->codecpar->sample_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    if (ff_alloc_extradata((*st)->codecpar, 34))
+        return AVERROR(ENOMEM);
+    memset((*st)->codecpar->extradata, 0, 34);
 
     return 0;
 }
@@ -438,11 +430,11 @@ static int wav_read_header(AVFormatContext *s)
                 return AVERROR(ENOMEM);
             avio_r8(pb);
             vst->id = 1;
-            vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-            vst->codec->codec_id = AV_CODEC_ID_SMVJPEG;
-            vst->codec->width  = avio_rl24(pb);
-            vst->codec->height = avio_rl24(pb);
-            if (ff_alloc_extradata(vst->codec, 4)) {
+            vst->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+            vst->codecpar->codec_id = AV_CODEC_ID_SMVJPEG;
+            vst->codecpar->width  = avio_rl24(pb);
+            vst->codecpar->height = avio_rl24(pb);
+            if (ff_alloc_extradata(vst->codecpar, 4)) {
                 av_log(s, AV_LOG_ERROR, "Could not allocate extradata.\n");
                 return AVERROR(ENOMEM);
             }
@@ -459,7 +451,7 @@ static int wav_read_header(AVFormatContext *s)
                 av_log(s, AV_LOG_ERROR, "too many frames per jpeg\n");
                 return AVERROR_INVALIDDATA;
             }
-            AV_WL32(vst->codec->extradata, wav->smv_frames_per_jpeg);
+            AV_WL32(vst->codecpar->extradata, wav->smv_frames_per_jpeg);
             wav->smv_cur_pt = 0;
             goto break_loop;
         case MKTAG('L', 'I', 'S', 'T'):
@@ -494,50 +486,42 @@ break_loop:
 
     avio_seek(pb, data_ofs, SEEK_SET);
 
-<<<<<<< HEAD
     if (data_size > (INT64_MAX>>3)) {
         av_log(s, AV_LOG_WARNING, "Data size %"PRId64" is too large\n", data_size);
         data_size = 0;
     }
 
-    if (   st->codec->bit_rate > 0 && data_size > 0
-        && st->codec->sample_rate > 0
-        && sample_count > 0 && st->codec->channels > 1
-        && sample_count % st->codec->channels == 0) {
-        if (fabs(8.0 * data_size * st->codec->channels * st->codec->sample_rate /
-            sample_count /st->codec->bit_rate - 1.0) < 0.3)
-            sample_count /= st->codec->channels;
+    if (   st->codecpar->bit_rate > 0 && data_size > 0
+        && st->codecpar->sample_rate > 0
+        && sample_count > 0 && st->codecpar->channels > 1
+        && sample_count % st->codecpar->channels == 0) {
+        if (fabs(8.0 * data_size * st->codecpar->channels * st->codecpar->sample_rate /
+            sample_count /st->codecpar->bit_rate - 1.0) < 0.3)
+            sample_count /= st->codecpar->channels;
     }
 
-    if (   data_size > 0 && sample_count && st->codec->channels
-        && (data_size << 3) / sample_count / st->codec->channels > st->codec->bits_per_coded_sample  + 1) {
+    if (   data_size > 0 && sample_count && st->codecpar->channels
+        && (data_size << 3) / sample_count / st->codecpar->channels > st->codecpar->bits_per_coded_sample  + 1) {
         av_log(s, AV_LOG_WARNING, "ignoring wrong sample_count %"PRId64"\n", sample_count);
         sample_count = 0;
     }
 
     /* G.729 hack (for Ticket4577)
      * FIXME: Come up with cleaner, more general solution */
-    if (st->codec->codec_id == AV_CODEC_ID_G729 && sample_count && (data_size << 3) > sample_count) {
+    if (st->codecpar->codec_id == AV_CODEC_ID_G729 && sample_count && (data_size << 3) > sample_count) {
         av_log(s, AV_LOG_WARNING, "ignoring wrong sample_count %"PRId64"\n", sample_count);
         sample_count = 0;
     }
 
-    if (!sample_count || av_get_exact_bits_per_sample(st->codec->codec_id) > 0)
-        if (   st->codec->channels
+    if (!sample_count || av_get_exact_bits_per_sample(st->codecpar->codec_id) > 0)
+        if (   st->codecpar->channels
             && data_size
-            && av_get_bits_per_sample(st->codec->codec_id)
+            && av_get_bits_per_sample(st->codecpar->codec_id)
             && wav->data_end <= avio_size(pb))
             sample_count = (data_size << 3)
                                   /
-                (st->codec->channels * (uint64_t)av_get_bits_per_sample(st->codec->codec_id));
+                (st->codecpar->channels * (uint64_t)av_get_bits_per_sample(st->codecpar->codec_id));
 
-=======
-    if (!sample_count && st->codecpar->channels &&
-        av_get_bits_per_sample(st->codecpar->codec_id))
-        sample_count = (data_size << 3) /
-                       (st->codecpar->channels *
-                        (uint64_t)av_get_bits_per_sample(st->codecpar->codec_id));
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     if (sample_count)
         st->duration = sample_count;
 
@@ -578,12 +562,12 @@ static int wav_read_packet(AVFormatContext *s, AVPacket *pkt)
     WAVDemuxContext *wav = s->priv_data;
 
     if (CONFIG_SPDIF_DEMUXER && wav->spdif == 0 &&
-        s->streams[0]->codec->codec_tag == 1) {
+        s->streams[0]->codecpar->codec_tag == 1) {
         enum AVCodecID codec;
         ret = ff_spdif_probe(s->pb->buffer, s->pb->buf_end - s->pb->buffer,
                              &codec);
         if (ret > AVPROBE_SCORE_EXTENSION) {
-            s->streams[0]->codec->codec_id = codec;
+            s->streams[0]->codecpar->codec_id = codec;
             wav->spdif = 1;
         } else {
             wav->spdif = -1;
@@ -774,7 +758,6 @@ static int w64_read_header(AVFormatContext *s)
     if (!st)
         return AVERROR(ENOMEM);
 
-<<<<<<< HEAD
     while (!avio_feof(pb)) {
         if (avio_read(pb, guid, 16) != 16)
             break;
@@ -784,31 +767,20 @@ static int w64_read_header(AVFormatContext *s)
 
         if (!memcmp(guid, ff_w64_guid_fmt, 16)) {
             /* subtract chunk header size - normal wav file doesn't count it */
-            ret = ff_get_wav_header(s, pb, st->codec, size - 24, 0);
+            ret = ff_get_wav_header(s, pb, st->codecpar, size - 24, 0);
             if (ret < 0)
                 return ret;
             avio_skip(pb, FFALIGN(size, INT64_C(8)) - size);
-=======
-    /* subtract chunk header size - normal wav file doesn't count it */
-    ret = ff_get_wav_header(s, pb, st->codecpar, size - 24);
-    if (ret < 0)
-        return ret;
-    avio_skip(pb, FFALIGN(size, INT64_C(8)) - size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
-            avpriv_set_pts_info(st, 64, 1, st->codec->sample_rate);
+            avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
         } else if (!memcmp(guid, ff_w64_guid_fact, 16)) {
             int64_t samples;
 
-<<<<<<< HEAD
             samples = avio_rl64(pb);
             if (samples > 0)
                 st->duration = samples;
         } else if (!memcmp(guid, ff_w64_guid_data, 16)) {
             wav->data_end = avio_tell(pb) + size - 24;
-=======
-    avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
             data_ofs = avio_tell(pb);
             if (!pb->seekable)
