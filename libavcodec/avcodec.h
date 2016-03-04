@@ -3311,10 +3311,9 @@ typedef struct AVCodecContext {
     int skip_alpha;
 
     /**
-     * Number of samples to skip after a discontinuity
-     * - decoding: unused
-     * - encoding: set by libavcodec
+     * @deprecated unused
      */
+    attribute_deprecated
     int seek_preroll;
 
 #if !FF_API_DEBUG_MV
@@ -3400,7 +3399,9 @@ unsigned av_codec_get_codec_properties(const AVCodecContext *avctx);
 int  av_codec_get_lowres(const AVCodecContext *avctx);
 void av_codec_set_lowres(AVCodecContext *avctx, int val);
 
+attribute_deprecated
 int  av_codec_get_seek_preroll(const AVCodecContext *avctx);
+attribute_deprecated
 void av_codec_set_seek_preroll(AVCodecContext *avctx, int val);
 
 uint16_t *av_codec_get_chroma_intra_matrix(const AVCodecContext *avctx);
@@ -3890,6 +3891,10 @@ typedef struct AVCodecParameters {
      * audio without any trailing padding.
      */
     int trailing_padding;
+    /**
+     * Number of samples to skip after a discontinuity
+     */
+    int seek_preroll;
 } AVCodecParameters;
 
 /**
