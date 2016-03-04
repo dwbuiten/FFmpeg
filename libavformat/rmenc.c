@@ -222,8 +222,8 @@ static int rv10_write_header(AVFormatContext *ctx,
                 coded_frame_size--;
             avio_wb32(s, coded_frame_size); /* frame length */
             avio_wb32(s, 0x51540); /* unknown */
-            avio_wb32(s, stream->enc->bit_rate / 8 * 60); /* bytes per minute */
-            avio_wb32(s, stream->enc->bit_rate / 8 * 60); /* bytes per minute */
+            avio_wb32(s, stream->par->bit_rate / 8 * 60); /* bytes per minute */
+            avio_wb32(s, stream->par->bit_rate / 8 * 60); /* bytes per minute */
             avio_wb16(s, 0x01);
             /* frame length : seems to be very important */
             avio_wb16(s, coded_frame_size);
@@ -251,15 +251,9 @@ static int rv10_write_header(AVFormatContext *ctx,
                 ffio_wfourcc(s,"RV10");
             else
                 ffio_wfourcc(s,"RV20");
-<<<<<<< HEAD
-            avio_wb16(s, stream->enc->width);
-            avio_wb16(s, stream->enc->height);
-            avio_wb16(s, stream->frame_rate.num / stream->frame_rate.den); /* frames per seconds ? */
-=======
             avio_wb16(s, stream->par->width);
             avio_wb16(s, stream->par->height);
-            avio_wb16(s, (int) stream->frame_rate); /* frames per seconds ? */
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            avio_wb16(s, stream->frame_rate.num / stream->frame_rate.den); /* frames per seconds ? */
             avio_wb32(s,0);     /* unknown meaning */
             avio_wb16(s, stream->frame_rate.num / stream->frame_rate.den);  /* unknown meaning */
             avio_wb32(s,0);     /* unknown meaning */
@@ -340,13 +334,8 @@ static int rm_write_header(AVFormatContext *s)
         switch (par->codec_type) {
         case AVMEDIA_TYPE_AUDIO:
             rm->audio_stream = stream;
-<<<<<<< HEAD
-            frame_size = av_get_audio_frame_duration(codec, 0);
-            stream->frame_rate = (AVRational){codec->sample_rate, frame_size};
-=======
             frame_size = av_get_audio_frame_duration2(par, 0);
-            stream->frame_rate = (float)par->sample_rate / (float)frame_size;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            stream->frame_rate = (AVRational){par->sample_rate, frame_size};
             /* XXX: dummy values */
             stream->packet_max_size = 1024;
             stream->nb_packets = 0;
