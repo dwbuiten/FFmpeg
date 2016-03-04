@@ -34,30 +34,18 @@ static int ivf_write_header(AVFormatContext *s)
         av_log(s, AV_LOG_ERROR, "Format supports only exactly one video stream\n");
         return AVERROR(EINVAL);
     }
-<<<<<<< HEAD
-    ctx = s->streams[0]->codec;
-    if (ctx->codec_type != AVMEDIA_TYPE_VIDEO ||
-        !(ctx->codec_id == AV_CODEC_ID_VP8 || ctx->codec_id == AV_CODEC_ID_VP9)) {
-        av_log(s, AV_LOG_ERROR, "Currently only VP8 and VP9 are supported!\n");
-=======
     par = s->streams[0]->codecpar;
-    if (par->codec_type != AVMEDIA_TYPE_VIDEO || par->codec_id != AV_CODEC_ID_VP8) {
-        av_log(s, AV_LOG_ERROR, "Currently only VP8 is supported!\n");
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    if (par->codec_type != AVMEDIA_TYPE_VIDEO ||
+        !(par->codec_id == AV_CODEC_ID_VP8 || par->codec_id == AV_CODEC_ID_VP9)) {
+        av_log(s, AV_LOG_ERROR, "Currently only VP8 and VP9 are supported!\n");
         return AVERROR(EINVAL);
     }
     avio_write(pb, "DKIF", 4);
     avio_wl16(pb, 0); // version
     avio_wl16(pb, 32); // header length
-<<<<<<< HEAD
-    avio_wl32(pb, ctx->codec_tag ? ctx->codec_tag : ctx->codec_id == AV_CODEC_ID_VP9 ? AV_RL32("VP90") : AV_RL32("VP80"));
-    avio_wl16(pb, ctx->width);
-    avio_wl16(pb, ctx->height);
-=======
-    avio_wl32(pb, par->codec_tag ? par->codec_tag : AV_RL32("VP80"));
+    avio_wl32(pb, par->codec_tag ? par->codec_tag : par->codec_id == AV_CODEC_ID_VP9 ? AV_RL32("VP90") : AV_RL32("VP80"));
     avio_wl16(pb, par->width);
     avio_wl16(pb, par->height);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     avio_wl32(pb, s->streams[0]->time_base.den);
     avio_wl32(pb, s->streams[0]->time_base.num);
     avio_wl64(pb, 0xFFFFFFFFFFFFFFFFULL);
