@@ -377,17 +377,6 @@ static int vfw_read_header(AVFormatContext *s)
     if(!ret)
         goto fail;
 
-<<<<<<< HEAD
-    codec = st->codec;
-    codec->time_base = av_inv_q(framerate_q);
-    codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    codec->width  = bi->bmiHeader.biWidth;
-    codec->height = bi->bmiHeader.biHeight;
-    codec->pix_fmt = vfw_pixfmt(biCompression, biBitCount);
-    if(codec->pix_fmt == AV_PIX_FMT_NONE) {
-        codec->codec_id = vfw_codecid(biCompression);
-        if(codec->codec_id == AV_CODEC_ID_NONE) {
-=======
     st->avg_frame_rate = framerate_q;
 
     par = st->codecpar;
@@ -398,7 +387,6 @@ static int vfw_read_header(AVFormatContext *s)
     if (par->format == AV_PIX_FMT_NONE) {
         par->codec_id = vfw_codecid(biCompression);
         if (par->codec_id == AV_CODEC_ID_NONE) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             av_log(s, AV_LOG_ERROR, "Unknown compression type. "
                              "Please report verbose (-v 9) debug information.\n");
             vfw_read_close(s);
