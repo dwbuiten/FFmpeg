@@ -158,15 +158,7 @@ static int smush_read_header(AVFormatContext *ctx)
     vst->codecpar->height     = height;
 
     if (!smush->version) {
-<<<<<<< HEAD
-        if (ff_alloc_extradata(vst->codec, 1024 + 2))
-=======
-        av_free(vst->codecpar->extradata);
-        vst->codecpar->extradata_size = 1024 + 2;
-        vst->codecpar->extradata = av_malloc(vst->codecpar->extradata_size +
-                                             AV_INPUT_BUFFER_PADDING_SIZE);
-        if (!vst->codecpar->extradata)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        if (ff_alloc_extradata(vst->codecpar, 1024 + 2))
             return AVERROR(ENOMEM);
 
         AV_WL16(vst->codecpar->extradata, subversion);

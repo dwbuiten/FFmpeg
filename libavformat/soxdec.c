@@ -124,29 +124,6 @@ static int sox_read_header(AVFormatContext *s)
     return 0;
 }
 
-<<<<<<< HEAD
-=======
-#define SOX_SAMPLES 1024
-
-static int sox_read_packet(AVFormatContext *s,
-                           AVPacket *pkt)
-{
-    int ret, size;
-
-    if (s->pb->eof_reached)
-        return AVERROR_EOF;
-
-    size = SOX_SAMPLES*s->streams[0]->codecpar->block_align;
-    ret = av_get_packet(s->pb, pkt, size);
-    if (ret < 0)
-        return AVERROR(EIO);
-    pkt->stream_index = 0;
-    pkt->size = ret;
-
-    return 0;
-}
-
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 AVInputFormat ff_sox_demuxer = {
     .name           = "sox",
     .long_name      = NULL_IF_CONFIG_SMALL("SoX native"),
