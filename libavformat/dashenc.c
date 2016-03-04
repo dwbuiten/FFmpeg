@@ -514,21 +514,15 @@ static int write_manifest(AVFormatContext *s, int final)
         for (i = 0; i < s->nb_streams; i++) {
             AVStream *st = s->streams[i];
             OutputStream *os = &c->streams[i];
-<<<<<<< HEAD
 
-            if (st->codec->codec_type != AVMEDIA_TYPE_VIDEO)
+            if (st->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
                 continue;
 
-            avio_printf(out, "\t\t\t<Representation id=\"%d\" mimeType=\"video/mp4\" codecs=\"%s\"%s width=\"%d\" height=\"%d\"", i, os->codec_str, os->bandwidth_str, st->codec->width, st->codec->height);
+            avio_printf(out, "\t\t\t<Representation id=\"%d\" mimeType=\"video/mp4\" codecs=\"%s\"%s width=\"%d\" height=\"%d\"", i, os->codec_str, os->bandwidth_str, st->codecpar->width, st->codecpar->height);
             if (st->avg_frame_rate.num)
                 avio_printf(out, " frameRate=\"%d/%d\"", st->avg_frame_rate.num, st->avg_frame_rate.den);
             avio_printf(out, ">\n");
 
-=======
-            if (st->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
-                continue;
-            avio_printf(out, "\t\t\t<Representation id=\"%d\" mimeType=\"video/mp4\" codecs=\"%s\"%s width=\"%d\" height=\"%d\">\n", i, os->codec_str, os->bandwidth_str, st->codecpar->width, st->codecpar->height);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             output_segment_list(&c->streams[i], out, c);
             avio_printf(out, "\t\t\t</Representation>\n");
         }
@@ -539,19 +533,12 @@ static int write_manifest(AVFormatContext *s, int final)
         for (i = 0; i < s->nb_streams; i++) {
             AVStream *st = s->streams[i];
             OutputStream *os = &c->streams[i];
-<<<<<<< HEAD
 
-            if (st->codec->codec_type != AVMEDIA_TYPE_AUDIO)
-                continue;
-
-            avio_printf(out, "\t\t\t<Representation id=\"%d\" mimeType=\"audio/mp4\" codecs=\"%s\"%s audioSamplingRate=\"%d\">\n", i, os->codec_str, os->bandwidth_str, st->codec->sample_rate);
-            avio_printf(out, "\t\t\t\t<AudioChannelConfiguration schemeIdUri=\"urn:mpeg:dash:23003:3:audio_channel_configuration:2011\" value=\"%d\" />\n", st->codec->channels);
-=======
             if (st->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
                 continue;
+
             avio_printf(out, "\t\t\t<Representation id=\"%d\" mimeType=\"audio/mp4\" codecs=\"%s\"%s audioSamplingRate=\"%d\">\n", i, os->codec_str, os->bandwidth_str, st->codecpar->sample_rate);
             avio_printf(out, "\t\t\t\t<AudioChannelConfiguration schemeIdUri=\"urn:mpeg:dash:23003:3:audio_channel_configuration:2011\" value=\"%d\" />\n", st->codecpar->channels);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             output_segment_list(&c->streams[i], out, c);
             avio_printf(out, "\t\t\t</Representation>\n");
         }
@@ -611,13 +598,7 @@ static int dash_write_header(AVFormatContext *s)
         AVDictionary *opts = NULL;
         char filename[1024];
 
-<<<<<<< HEAD
-        os->bit_rate = s->streams[i]->codec->bit_rate ?
-                       s->streams[i]->codec->bit_rate :
-                       s->streams[i]->codec->rc_max_rate;
-=======
         os->bit_rate = s->streams[i]->codecpar->bit_rate;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         if (os->bit_rate) {
             snprintf(os->bandwidth_str, sizeof(os->bandwidth_str),
                      " bandwidth=\"%d\"", os->bit_rate);
@@ -687,8 +668,7 @@ static int dash_write_header(AVFormatContext *s)
         // already before being handed to this muxer, so we don't have mismatches
         // between the MPD and the actual segments.
         s->avoid_negative_ts = ctx->avoid_negative_ts;
-<<<<<<< HEAD
-        if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+        if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             AVRational avg_frame_rate = s->streams[i]->avg_frame_rate;
             if (avg_frame_rate.num > 0) {
                 if (av_cmp_q(avg_frame_rate, c->min_frame_rate) < 0)
@@ -699,12 +679,7 @@ static int dash_write_header(AVFormatContext *s)
                 c->ambiguous_frame_rate = 1;
             }
             c->has_video = 1;
-        } else if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-=======
-        if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
-            c->has_video = 1;
-        else if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        } else if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             c->has_audio = 1;
         }
 
