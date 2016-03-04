@@ -418,17 +418,7 @@ static void dump_stream_format(AVFormatContext *ic, int i,
     int flags = (is_output ? ic->oformat->flags : ic->iformat->flags);
     AVStream *st = ic->streams[i];
     AVDictionaryEntry *lang = av_dict_get(st->metadata, "language", NULL, 0);
-<<<<<<< HEAD
     char *separator = ic->dump_separator;
-    char **codec_separator = av_opt_ptr(st->codec->av_class, st->codec, "dump_separator");
-    int use_format_separator = !*codec_separator;
-
-    if (use_format_separator)
-        *codec_separator = av_strdup(separator);
-    avcodec_string(buf, sizeof(buf), st->codec, is_output);
-    if (use_format_separator)
-        av_freep(codec_separator);
-=======
     AVCodecContext *avctx;
     int ret;
 
@@ -442,10 +432,11 @@ static void dump_stream_format(AVFormatContext *ic, int i,
         return;
     }
 
+    if (separator)
+        av_opt_set(avctx, "dump_separator", separator, 0);
     avcodec_string(buf, sizeof(buf), avctx, is_output);
     avcodec_free_context(&avctx);
 
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     av_log(NULL, AV_LOG_INFO, "    Stream #%d:%d", index, i);
 
     /* the pid is an important information, so we display it */
@@ -461,13 +452,8 @@ static void dump_stream_format(AVFormatContext *ic, int i,
     if (st->sample_aspect_ratio.num) {
         AVRational display_aspect_ratio;
         av_reduce(&display_aspect_ratio.num, &display_aspect_ratio.den,
-<<<<<<< HEAD
-                  st->codec->width  * (int64_t)st->sample_aspect_ratio.num,
-                  st->codec->height * (int64_t)st->sample_aspect_ratio.den,
-=======
-                  st->codecpar->width  * st->sample_aspect_ratio.num,
-                  st->codecpar->height * st->sample_aspect_ratio.den,
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                  st->codecpar->width  * (int64_t)st->sample_aspect_ratio.num,
+                  st->codecpar->height * (int64_t)st->sample_aspect_ratio.den,
                   1024 * 1024);
         av_log(NULL, AV_LOG_INFO, ", SAR %d:%d DAR %d:%d",
                st->sample_aspect_ratio.num, st->sample_aspect_ratio.den,
@@ -479,20 +465,13 @@ static void dump_stream_format(AVFormatContext *ic, int i,
         int tbr = st->r_frame_rate.den && st->r_frame_rate.num;
         int tbn = st->time_base.den && st->time_base.num;
 
-<<<<<<< HEAD
-        if (fps || tbr || tbn || tbc)
+        if (fps || tbr || tbn)
             av_log(NULL, AV_LOG_INFO, "%s", separator);
 
         if (fps)
-            print_fps(av_q2d(st->avg_frame_rate), tbr || tbn || tbc ? "fps, " : "fps");
+            print_fps(av_q2d(st->avg_frame_rate), tbr || tbn ? "fps, " : "fps");
         if (tbr)
-            print_fps(av_q2d(st->r_frame_rate), tbn || tbc ? "tbr, " : "tbr");
-=======
-        if (fps || tbn)
-            av_log(NULL, AV_LOG_INFO, "\n      ");
-        if (fps)
-            print_fps(av_q2d(st->avg_frame_rate), tbn ? "fps, " : "fps");
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            print_fps(av_q2d(st->r_frame_rate), tbn ? "tbr, " : "tbr");
         if (tbn)
             print_fps(1 / av_q2d(st->time_base), "tbn");
     }
