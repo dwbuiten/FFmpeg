@@ -109,22 +109,14 @@ static int thp_read_header(AVFormatContext *s)
             /* The denominator and numerator are switched because 1/fps
                is required.  */
             avpriv_set_pts_info(st, 64, thp->fps.den, thp->fps.num);
-<<<<<<< HEAD
-            st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-            st->codec->codec_id = AV_CODEC_ID_THP;
-            st->codec->codec_tag = 0;  /* no fourcc */
-            st->codec->width = avio_rb32(pb);
-            st->codec->height = avio_rb32(pb);
-            st->nb_frames =
-            st->duration = thp->framecnt;
-=======
             st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
             st->codecpar->codec_id = AV_CODEC_ID_THP;
             st->codecpar->codec_tag = 0;  /* no fourcc */
             st->codecpar->width = avio_rb32(pb);
             st->codecpar->height = avio_rb32(pb);
             st->codecpar->sample_rate = av_q2d(thp->fps);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            st->nb_frames =
+            st->duration = thp->framecnt;
             thp->vst = st;
             thp->video_stream_index = st->index;
 
