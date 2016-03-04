@@ -52,20 +52,9 @@ static int apc_read_header(AVFormatContext *s)
     avio_rl32(pb); /* number of samples */
     st->codecpar->sample_rate = avio_rl32(pb);
 
-<<<<<<< HEAD
     /* initial predictor values for adpcm decoder */
-    if (ff_get_extradata(st->codec, pb, 2 * 4) < 0)
+    if (ff_get_extradata(st->codecpar, pb, 2 * 4) < 0)
         return AVERROR(ENOMEM);
-=======
-    st->codecpar->extradata_size = 2 * 4;
-    st->codecpar->extradata = av_malloc(st->codecpar->extradata_size +
-                                        AV_INPUT_BUFFER_PADDING_SIZE);
-    if (!st->codecpar->extradata)
-        return AVERROR(ENOMEM);
-
-    /* initial predictor values for adpcm decoder */
-    avio_read(pb, st->codecpar->extradata, 2 * 4);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     if (avio_rl32(pb)) {
         st->codecpar->channels       = 2;
