@@ -418,16 +418,15 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
 
     bit_rate = 0;
     for (n = 0; n < s->nb_streams; n++) {
-<<<<<<< HEAD
         AVDictionaryEntry *entry;
-        enc = s->streams[n]->codec;
+        par = s->streams[n]->codecpar;
 
         avpriv_set_pts_info(s->streams[n], 32, 1, 1000); /* 32 bit pts in ms */
 
-        bit_rate += enc->bit_rate;
-        if (   enc->codec_type == AVMEDIA_TYPE_VIDEO
-            && enc->sample_aspect_ratio.num > 0
-            && enc->sample_aspect_ratio.den > 0)
+        bit_rate += par->bit_rate;
+        if (   par->codec_type == AVMEDIA_TYPE_VIDEO
+            && par->sample_aspect_ratio.num > 0
+            && par->sample_aspect_ratio.den > 0)
             has_aspect_ratio++;
 
         entry = av_dict_get(s->streams[n]->metadata, "language", NULL, 0);
@@ -446,19 +445,12 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
                     asf->streams[n].stream_language_index = asf->nb_languages;
                     asf->nb_languages++;
                 }
-                if (enc->codec_type == AVMEDIA_TYPE_AUDIO)
+                if (par->codec_type == AVMEDIA_TYPE_AUDIO)
                     audio_language_counts[asf->streams[n].stream_language_index]++;
             }
         } else {
             asf->streams[n].stream_language_index = 128;
         }
-=======
-        par = s->streams[n]->codecpar;
-
-        avpriv_set_pts_info(s->streams[n], 32, 1, 1000); /* 32 bit pts in ms */
-
-        bit_rate += par->bit_rate;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
 
     if (asf->is_streamed) {
@@ -517,7 +509,7 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
                 if (audio_language_counts[i]) {
                     avio_wl16(pb, audio_language_counts[i]);
                     for (n = 0; n < s->nb_streams; n++)
-                        if (asf->streams[n].stream_language_index == i && s->streams[n]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+                        if (asf->streams[n].stream_language_index == i && s->streams[n]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
                             avio_wl16(pb, n + 1);
                 }
             }
@@ -531,10 +523,10 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
             es_pos = put_header(pb, &ff_asf_extended_stream_properties_object);
             avio_wl64(pb, 0); /* start time */
             avio_wl64(pb, 0); /* end time */
-            avio_wl32(pb, s->streams[n]->codec->bit_rate); /* data bitrate bps */
+            avio_wl32(pb, s->streams[n]->codecpar->bit_rate); /* data bitrate bps */
             avio_wl32(pb, 5000); /* buffer size ms */
             avio_wl32(pb, 0); /* initial buffer fullness */
-            avio_wl32(pb, s->streams[n]->codec->bit_rate); /* peak data bitrate */
+            avio_wl32(pb, s->streams[n]->codecpar->bit_rate); /* peak data bitrate */
             avio_wl32(pb, 5000); /* maximum buffer size ms */
             avio_wl32(pb, 0); /* max initial buffer fullness */
             avio_wl32(pb, 0); /* max object size */
@@ -552,11 +544,11 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
         hpos2 = put_header(pb, &ff_asf_metadata_header);
         avio_wl16(pb, 2 * has_aspect_ratio);
         for (n = 0; n < s->nb_streams; n++) {
-            enc = s->streams[n]->codec;
-            if (   enc->codec_type == AVMEDIA_TYPE_VIDEO
-                && enc->sample_aspect_ratio.num > 0
-                && enc->sample_aspect_ratio.den > 0) {
-                AVRational sar = enc->sample_aspect_ratio;
+            par = s->streams[n]->codecpar;
+            if (   par->codec_type == AVMEDIA_TYPE_VIDEO
+                && par->sample_aspect_ratio.num > 0
+                && par->sample_aspect_ratio.den > 0) {
+                AVRational sar = par->sample_aspect_ratio;
                 avio_wl16(pb, 0);
                 // the stream number is set like this below
                 avio_wl16(pb, n + 1);
@@ -647,15 +639,9 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
         }
 
         hpos = put_header(pb, &ff_asf_stream_header);
-<<<<<<< HEAD
-        if (enc->codec_type == AVMEDIA_TYPE_AUDIO) {
+        if (par->codec_type == AVMEDIA_TYPE_AUDIO) {
             ff_put_guid(pb, &ff_asf_audio_stream);
             ff_put_guid(pb, &ff_asf_audio_conceal_spread);
-=======
-        if (par->codec_type == AVMEDIA_TYPE_AUDIO) {
-            put_guid(pb, &ff_asf_audio_stream);
-            put_guid(pb, &ff_asf_audio_conceal_spread);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         } else {
             ff_put_guid(pb, &ff_asf_video_stream);
             ff_put_guid(pb, &ff_asf_video_conceal_none);
@@ -669,11 +655,7 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
 
         if (par->codec_type == AVMEDIA_TYPE_AUDIO) {
             /* WAVEFORMATEX header */
-<<<<<<< HEAD
-            int wavsize = ff_put_wav_header(pb, enc, FF_PUT_WAV_HEADER_FORCE_WAVEFORMATEX);
-=======
-            int wavsize = ff_put_wav_header(s, pb, par);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            int wavsize = ff_put_wav_header(s, pb, par, FF_PUT_WAV_HEADER_FORCE_WAVEFORMATEX);
 
             if (wavsize < 0)
                 return -1;
@@ -701,11 +683,7 @@ static int asf_write_header1(AVFormatContext *s, int64_t file_size,
             avio_wl16(pb, 40 + par->extradata_size); /* size */
 
             /* BITMAPINFOHEADER header */
-<<<<<<< HEAD
-            ff_put_bmp_header(pb, enc, ff_codec_bmp_tags, 1, 0);
-=======
-            ff_put_bmp_header(pb, par, ff_codec_bmp_tags, 1);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            ff_put_bmp_header(pb, par, ff_codec_bmp_tags, 1, 0);
         }
         end_header(pb, hpos);
     }
@@ -1075,17 +1053,10 @@ static int asf_write_packet(AVFormatContext *s, AVPacket *pkt)
     ASFContext *asf = s->priv_data;
     AVIOContext *pb = s->pb;
     ASFStream *stream;
-<<<<<<< HEAD
-    AVCodecContext *codec;
+    AVCodecParameters *par;
     uint32_t packet_number;
     int64_t pts;
     int start_sec;
-=======
-    int64_t duration;
-    AVCodecParameters *par;
-    int64_t packet_st, pts;
-    int start_sec, i;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     int flags = pkt->flags;
     int ret;
     uint64_t offset = avio_tell(pb);
