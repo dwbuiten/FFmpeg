@@ -144,13 +144,8 @@ static int dss_read_header(AVFormatContext *s)
     ctx->audio_codec = avio_r8(pb);
 
     if (ctx->audio_codec == DSS_ACODEC_DSS_SP) {
-<<<<<<< HEAD
-        st->codec->codec_id    = AV_CODEC_ID_DSS_SP;
-        st->codec->sample_rate = 11025;
-=======
         st->codecpar->codec_id    = AV_CODEC_ID_DSS_SP;
-        st->codecpar->sample_rate = 12000;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        st->codecpar->sample_rate = 11025;
     } else if (ctx->audio_codec == DSS_ACODEC_G723_1) {
         st->codecpar->codec_id    = AV_CODEC_ID_G723_1;
         st->codecpar->sample_rate = 8000;
@@ -240,7 +235,7 @@ static int dss_sp_read_packet(AVFormatContext *s, AVPacket *pkt)
     pkt->duration     = 264;
     pkt->pos = pos;
     pkt->stream_index = 0;
-    s->bit_rate = 8LL * ctx->packet_size * st->codec->sample_rate * 512 / (506 * pkt->duration);
+    s->bit_rate = 8LL * ctx->packet_size * st->codecpar->sample_rate * 512 / (506 * pkt->duration);
 
     if (ctx->counter < 0) {
         int size2 = ctx->counter + read_size;
@@ -304,7 +299,7 @@ static int dss_723_1_read_packet(AVFormatContext *s, AVPacket *pkt)
     pkt->data[0]  = byte;
     offset        = 1;
     pkt->duration = 240;
-    s->bit_rate = 8LL * size * st->codec->sample_rate * 512 / (506 * pkt->duration);
+    s->bit_rate = 8LL * size * st->codecpar->sample_rate * 512 / (506 * pkt->duration);
 
     pkt->stream_index = 0;
 
