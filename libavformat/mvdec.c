@@ -356,14 +356,9 @@ static int mv_read_header(AVFormatContext *avctx)
             ast = avformat_new_stream(avctx, NULL);
             if (!ast)
                 return AVERROR(ENOMEM);
-<<<<<<< HEAD
-            ast->codec->codec_type = AVMEDIA_TYPE_AUDIO;
+            ast->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
             if ((read_table(avctx, ast, parse_audio_var)) < 0)
                 return ret;
-=======
-            ast->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
-            read_table(avctx, ast, parse_audio_var);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             if (mv->acompression == 100 &&
                 mv->aformat == AUDIO_FORMAT_SIGNED &&
                 ast->codecpar->bits_per_coded_sample == 16) {
@@ -388,14 +383,9 @@ static int mv_read_header(AVFormatContext *avctx)
             vst = avformat_new_stream(avctx, NULL);
             if (!vst)
                 return AVERROR(ENOMEM);
-<<<<<<< HEAD
-            vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
+            vst->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
             if ((ret = read_table(avctx, vst, parse_video_var))<0)
                 return ret;
-=======
-            vst->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
-            read_table(avctx, vst, parse_video_var);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         }
 
         if (mv->nb_audio_tracks)
