@@ -58,9 +58,15 @@ static int tak_read_header(AVFormatContext *s)
     if (!st)
         return AVERROR(ENOMEM);
 
+<<<<<<< HEAD
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id   = AV_CODEC_ID_TAK;
     st->need_parsing      = AVSTREAM_PARSE_FULL_RAW;
+=======
+    st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+    st->codecpar->codec_id   = AV_CODEC_ID_TAK;
+    st->need_parsing      = AVSTREAM_PARSE_FULL;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     tc->mlast_frame = 0;
     if (avio_rl32(pb) != MKTAG('t', 'B', 'a', 'K')) {
@@ -145,15 +151,21 @@ static int tak_read_header(AVFormatContext *s)
             avpriv_tak_parse_streaminfo(&gb, &ti);
             if (ti.samples > 0)
                 st->duration = ti.samples;
-            st->codec->bits_per_coded_sample = ti.bps;
+            st->codecpar->bits_per_coded_sample = ti.bps;
             if (ti.ch_layout)
-                st->codec->channel_layout = ti.ch_layout;
-            st->codec->sample_rate           = ti.sample_rate;
-            st->codec->channels              = ti.channels;
+                st->codecpar->channel_layout = ti.ch_layout;
+            st->codecpar->sample_rate           = ti.sample_rate;
+            st->codecpar->channels              = ti.channels;
             st->start_time                   = 0;
+<<<<<<< HEAD
             avpriv_set_pts_info(st, 64, 1, st->codec->sample_rate);
             st->codec->extradata             = buffer;
             st->codec->extradata_size        = size - 3;
+=======
+            avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
+            st->codecpar->extradata             = buffer;
+            st->codecpar->extradata_size        = size;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             buffer                           = NULL;
         } else if (type == TAK_METADATA_LAST_FRAME) {
             if (size != 11)

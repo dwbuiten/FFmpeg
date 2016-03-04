@@ -57,15 +57,22 @@ flac_header (AVFormatContext * s, int idx)
         if (get_bits_long(&gb, 32) != FLAC_STREAMINFO_SIZE)
             return -1;
 
-        st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-        st->codec->codec_id = AV_CODEC_ID_FLAC;
+        st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+        st->codecpar->codec_id = AV_CODEC_ID_FLAC;
         st->need_parsing = AVSTREAM_PARSE_HEADERS;
 
+<<<<<<< HEAD
         if (ff_alloc_extradata(st->codec, FLAC_STREAMINFO_SIZE) < 0)
             return AVERROR(ENOMEM);
         memcpy(st->codec->extradata, streaminfo_start, st->codec->extradata_size);
+=======
+        st->codecpar->extradata =
+            av_malloc(FLAC_STREAMINFO_SIZE + AV_INPUT_BUFFER_PADDING_SIZE);
+        memcpy(st->codecpar->extradata, streaminfo_start, FLAC_STREAMINFO_SIZE);
+        st->codecpar->extradata_size = FLAC_STREAMINFO_SIZE;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
-        samplerate = AV_RB24(st->codec->extradata + 10) >> 4;
+        samplerate = AV_RB24(st->codecpar->extradata + 10) >> 4;
         if (!samplerate)
             return AVERROR_INVALIDDATA;
 
@@ -82,6 +89,7 @@ old_flac_header (AVFormatContext * s, int idx)
 {
     struct ogg *ogg = s->priv_data;
     AVStream *st = s->streams[idx];
+<<<<<<< HEAD
     struct ogg_stream *os = ogg->streams + idx;
     AVCodecParserContext *parser = av_parser_init(AV_CODEC_ID_FLAC);
     int size;
@@ -92,6 +100,10 @@ old_flac_header (AVFormatContext * s, int idx)
 
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id = AV_CODEC_ID_FLAC;
+=======
+    st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+    st->codecpar->codec_id = AV_CODEC_ID_FLAC;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
     av_parser_parse2(parser, st->codec,

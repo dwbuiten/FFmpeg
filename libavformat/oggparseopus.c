@@ -52,9 +52,16 @@ static int opus_header(AVFormatContext *avf, int idx)
     if (os->flags & OGG_FLAG_BOS) {
         if (os->psize < OPUS_HEAD_SIZE || (AV_RL8(packet + 8) & 0xF0) != 0)
             return AVERROR_INVALIDDATA;
+<<<<<<< HEAD
         st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
         st->codec->codec_id   = AV_CODEC_ID_OPUS;
         st->codec->channels   = AV_RL8 (packet + 9);
+=======
+
+        st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+        st->codecpar->codec_id   = AV_CODEC_ID_OPUS;
+        st->codecpar->channels   = AV_RL8(packet + 9);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         priv->pre_skip        = AV_RL16(packet + 10);
         st->codec->delay      = priv->pre_skip;
         /*orig_sample_rate    = AV_RL32(packet + 12);*/
@@ -64,12 +71,20 @@ static int opus_header(AVFormatContext *avf, int idx)
         if (ff_alloc_extradata(st->codec, os->psize))
             return AVERROR(ENOMEM);
 
+<<<<<<< HEAD
         memcpy(st->codec->extradata, packet, os->psize);
 
         st->codec->sample_rate = 48000;
         av_codec_set_seek_preroll(st->codec,
                                   av_rescale(OPUS_SEEK_PREROLL_MS,
                                              st->codec->sample_rate, 1000));
+=======
+        memcpy(extradata, packet, os->psize);
+        st->codecpar->extradata      = extradata;
+        st->codecpar->extradata_size = os->psize;
+
+        st->codecpar->sample_rate = 48000;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         avpriv_set_pts_info(st, 64, 1, 48000);
         priv->need_comments = 1;
         return 1;

@@ -34,13 +34,14 @@ static int dirac_header(AVFormatContext *s, int idx)
     int ret;
 
     // already parsed the header
-    if (st->codec->codec_id == AV_CODEC_ID_DIRAC)
+    if (st->codecpar->codec_id == AV_CODEC_ID_DIRAC)
         return 0;
 
     ret = av_dirac_parse_sequence_header(&dsh, os->buf + os->pstart + 13, (os->psize - 13), s);
     if (ret < 0)
         return ret;
 
+<<<<<<< HEAD
     st->codec->codec_type      = AVMEDIA_TYPE_VIDEO;
     st->codec->codec_id        = AV_CODEC_ID_DIRAC;
     st->codec->width           = dsh->width;
@@ -54,6 +55,19 @@ static int dirac_header(AVFormatContext *s, int idx)
     st->codec->level           = dsh->level;
     if (av_image_check_sar(st->codec->width, st->codec->height, dsh->sample_aspect_ratio) >= 0)
         st->sample_aspect_ratio = dsh->sample_aspect_ratio;
+=======
+    st->codecpar->codec_type      = AVMEDIA_TYPE_VIDEO;
+    st->codecpar->codec_id        = AV_CODEC_ID_DIRAC;
+    st->codecpar->width           = dsh->width;
+    st->codecpar->height          = dsh->height;
+    st->codecpar->format          = dsh->pix_fmt;
+    st->codecpar->color_range     = dsh->color_range;
+    st->codecpar->color_trc       = dsh->color_trc;
+    st->codecpar->color_primaries = dsh->color_primaries;
+    st->codecpar->color_space     = dsh->colorspace;
+    st->codecpar->profile         = dsh->profile;
+    st->codecpar->level           = dsh->level;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     // dirac in ogg always stores timestamps as though the video were interlaced
     avpriv_set_pts_info(st, 64, dsh->framerate.den, 2 * dsh->framerate.num);
@@ -93,8 +107,8 @@ static int old_dirac_header(AVFormatContext *s, int idx)
     if (buf[0] != 'K')
         return 0;
 
-    st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    st->codec->codec_id = AV_CODEC_ID_DIRAC;
+    st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+    st->codecpar->codec_id = AV_CODEC_ID_DIRAC;
     avpriv_set_pts_info(st, 64, AV_RB32(buf+12), AV_RB32(buf+8));
     return 1;
 }

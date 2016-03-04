@@ -58,27 +58,32 @@ enum AVCodecID ff_codec_guid_get_id(const AVCodecGuid *guids, ff_asf_guid guid)
  * an openended structure.
  */
 
-static void parse_waveformatex(AVIOContext *pb, AVCodecContext *c)
+static void parse_waveformatex(AVIOContext *pb, AVCodecParameters *par)
 {
     ff_asf_guid subformat;
+<<<<<<< HEAD
     int bps = avio_rl16(pb);
     if (bps)
         c->bits_per_coded_sample = bps;
 
     c->channel_layout        = avio_rl32(pb); /* dwChannelMask */
+=======
+    par->bits_per_coded_sample = avio_rl16(pb);
+    par->channel_layout        = avio_rl32(pb); /* dwChannelMask */
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     ff_get_guid(pb, &subformat);
     if (!memcmp(subformat + 4,
                 (const uint8_t[]){ FF_AMBISONIC_BASE_GUID }, 12) ||
         !memcmp(subformat + 4,
                 (const uint8_t[]){ FF_MEDIASUBTYPE_BASE_GUID }, 12)) {
-        c->codec_tag = AV_RL32(subformat);
-        c->codec_id  = ff_wav_codec_get_id(c->codec_tag,
-                                           c->bits_per_coded_sample);
+        par->codec_tag = AV_RL32(subformat);
+        par->codec_id  = ff_wav_codec_get_id(par->codec_tag,
+                                             par->bits_per_coded_sample);
     } else {
-        c->codec_id = ff_codec_guid_get_id(ff_codec_wav_guids, subformat);
-        if (!c->codec_id)
-            av_log(c, AV_LOG_WARNING,
+        par->codec_id = ff_codec_guid_get_id(ff_codec_wav_guids, subformat);
+        if (!par->codec_id)
+            av_log(pb, AV_LOG_WARNING,
                    "unknown subformat:"FF_PRI_GUID"\n",
                    FF_ARG_GUID(subformat));
     }
@@ -86,7 +91,11 @@ static void parse_waveformatex(AVIOContext *pb, AVCodecContext *c)
 
 /* "big_endian" values are needed for RIFX file format */
 int ff_get_wav_header(AVFormatContext *s, AVIOContext *pb,
+<<<<<<< HEAD
                       AVCodecContext *codec, int size, int big_endian)
+=======
+                      AVCodecParameters *par, int size)
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 {
     int id;
     uint64_t bitrate = 0;
@@ -96,6 +105,7 @@ int ff_get_wav_header(AVFormatContext *s, AVIOContext *pb,
         return AVERROR_INVALIDDATA;
     }
 
+<<<<<<< HEAD
     codec->codec_type  = AVMEDIA_TYPE_AUDIO;
     if (!big_endian) {
         id                 = avio_rl16(pb);
@@ -121,12 +131,23 @@ int ff_get_wav_header(AVFormatContext *s, AVIOContext *pb,
             codec->bits_per_coded_sample = avio_rb16(pb);
         }
     }
+=======
+    id                 = avio_rl16(pb);
+    par->codec_type    = AVMEDIA_TYPE_AUDIO;
+    par->channels      = avio_rl16(pb);
+    par->sample_rate   = avio_rl32(pb);
+    bitrate            = avio_rl32(pb) * 8;
+    par->block_align   = avio_rl16(pb);
+    if (size == 14) {  /* We're dealing with plain vanilla WAVEFORMAT */
+        par->bits_per_coded_sample = 8;
+    } else
+        par->bits_per_coded_sample = avio_rl16(pb);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     if (id == 0xFFFE) {
-        codec->codec_tag = 0;
+        par->codec_tag = 0;
     } else {
-        codec->codec_tag = id;
-        codec->codec_id  = ff_wav_codec_get_id(id,
-                                               codec->bits_per_coded_sample);
+        par->codec_tag = id;
+        par->codec_id  = ff_wav_codec_get_id(id, par->bits_per_coded_sample);
     }
     if (size >= 18 && id != 0x0165) {  /* We're obviously dealing with WAVEFORMATEX */
         int cbSize = avio_rl16(pb); /* cbSize */
@@ -137,14 +158,25 @@ int ff_get_wav_header(AVFormatContext *s, AVIOContext *pb,
         size  -= 18;
         cbSize = FFMIN(size, cbSize);
         if (cbSize >= 22 && id == 0xfffe) { /* WAVEFORMATEXTENSIBLE */
-            parse_waveformatex(pb, codec);
+            parse_waveformatex(pb, par);
             cbSize -= 22;
             size   -= 22;
         }
+<<<<<<< HEAD
         if (cbSize > 0) {
             av_freep(&codec->extradata);
             if (ff_get_extradata(codec, pb, cbSize) < 0)
                 return AVERROR(ENOMEM);
+=======
+        par->extradata_size = cbSize;
+        if (cbSize > 0) {
+            av_free(par->extradata);
+            par->extradata = av_mallocz(par->extradata_size +
+                                        AV_INPUT_BUFFER_PADDING_SIZE);
+            if (!par->extradata)
+                return AVERROR(ENOMEM);
+            avio_read(pb, par->extradata, par->extradata_size);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             size -= cbSize;
         }
 
@@ -164,6 +196,7 @@ int ff_get_wav_header(AVFormatContext *s, AVIOContext *pb,
         bitrate            = 0;
         if (size < 8 + nb_streams * 20)
             return AVERROR_INVALIDDATA;
+<<<<<<< HEAD
         for (i = 0; i < nb_streams; i++)
             codec->channels += codec->extradata[8 + i * 20 + 17];
     }
@@ -171,19 +204,37 @@ int ff_get_wav_header(AVFormatContext *s, AVIOContext *pb,
     codec->bit_rate = bitrate;
 
     if (codec->sample_rate <= 0) {
+=======
+        } else {
+            av_log(s, AV_LOG_WARNING,
+                   "The bitrate %"PRIu64" is too large, resetting to 0.",
+                   bitrate);
+            par->bit_rate = 0;
+        }
+    } else {
+        par->bit_rate = bitrate;
+    }
+
+    if (par->sample_rate <= 0) {
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         av_log(s, AV_LOG_ERROR,
-               "Invalid sample rate: %d\n", codec->sample_rate);
+               "Invalid sample rate: %d\n", par->sample_rate);
         return AVERROR_INVALIDDATA;
     }
-    if (codec->codec_id == AV_CODEC_ID_AAC_LATM) {
+    if (par->codec_id == AV_CODEC_ID_AAC_LATM) {
         /* Channels and sample_rate values are those prior to applying SBR
          * and/or PS. */
-        codec->channels    = 0;
-        codec->sample_rate = 0;
+        par->channels    = 0;
+        par->sample_rate = 0;
     }
     /* override bits_per_coded_sample for G.726 */
+<<<<<<< HEAD
     if (codec->codec_id == AV_CODEC_ID_ADPCM_G726 && codec->sample_rate)
         codec->bits_per_coded_sample = codec->bit_rate / codec->sample_rate;
+=======
+    if (par->codec_id == AV_CODEC_ID_ADPCM_G726)
+        par->bits_per_coded_sample = par->bit_rate / par->sample_rate;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     return 0;
 }
@@ -208,13 +259,19 @@ enum AVCodecID ff_wav_codec_get_id(unsigned int tag, int bps)
 int ff_get_bmp_header(AVIOContext *pb, AVStream *st, unsigned *esize)
 {
     int tag1;
+<<<<<<< HEAD
     if(esize) *esize  = avio_rl32(pb);
     else                avio_rl32(pb);
     st->codec->width  = avio_rl32(pb);
     st->codec->height = (int32_t)avio_rl32(pb);
+=======
+    avio_rl32(pb); /* size */
+    st->codecpar->width  = avio_rl32(pb);
+    st->codecpar->height = (int32_t)avio_rl32(pb);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     avio_rl16(pb); /* planes */
-    st->codec->bits_per_coded_sample = avio_rl16(pb); /* depth */
-    tag1                             = avio_rl32(pb);
+    st->codecpar->bits_per_coded_sample = avio_rl16(pb); /* depth */
+    tag1                                = avio_rl32(pb);
     avio_rl32(pb); /* ImageSize */
     avio_rl32(pb); /* XPelsPerMeter */
     avio_rl32(pb); /* YPelsPerMeter */

@@ -166,6 +166,7 @@ static int segment_mux_init(AVFormatContext *s)
 
         if (!(st = avformat_new_stream(oc, NULL)))
             return AVERROR(ENOMEM);
+<<<<<<< HEAD
         icodec = s->streams[i]->codec;
         ocodec = st->codec;
         avcodec_copy_context(ocodec, icodec);
@@ -176,6 +177,9 @@ static int segment_mux_init(AVFormatContext *s)
         } else {
             ocodec->codec_tag = 0;
         }
+=======
+        avcodec_parameters_copy(st->codecpar, s->streams[i]->codecpar);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         st->sample_aspect_ratio = s->streams[i]->sample_aspect_ratio;
         st->time_base = s->streams[i]->time_base;
         av_dict_copy(&st->metadata, s->streams[i]->metadata, 0);
@@ -655,6 +659,7 @@ static int seg_write_header(AVFormatContext *s)
         }
     }
 
+<<<<<<< HEAD
     if (seg->list) {
         if (seg->list_type == LIST_TYPE_UNDEFINED) {
             if      (av_match_ext(seg->list, "csv" )) seg->list_type = LIST_TYPE_CSV;
@@ -673,6 +678,11 @@ static int seg_write_header(AVFormatContext *s)
     }
     if (seg->list_type == LIST_TYPE_EXT)
         av_log(s, AV_LOG_WARNING, "'ext' list type option is deprecated in favor of 'csv'\n");
+=======
+    for (i = 0; i < s->nb_streams; i++)
+        seg->has_video +=
+            (s->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     if ((ret = select_reference_stream(s)) < 0)
         goto fail;
@@ -774,6 +784,7 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
     if (!seg->avf)
         return AVERROR(EINVAL);
 
+<<<<<<< HEAD
     if (seg->times) {
         end_pts = seg->segment_count < seg->nb_times ?
             seg->times[seg->segment_count] : INT64_MAX;
@@ -795,6 +806,11 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
         } else {
             end_pts = seg->time * (seg->segment_count + 1);
         }
+=======
+    if (seg->has_video) {
+        can_split = st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
+                    pkt->flags & AV_PKT_FLAG_KEY;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
 
     ff_dlog(s, "packet stream:%d pts:%s pts_time:%s duration_time:%s is_key:%d frame:%d\n",

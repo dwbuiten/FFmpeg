@@ -79,11 +79,18 @@ static av_cold int audio_read_header(AVFormatContext *s1)
     }
 
     /* take real parameters */
+<<<<<<< HEAD
     st->codec->codec_type  = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id    = codec_id;
     st->codec->sample_rate = s->sample_rate;
     st->codec->channels    = s->channels;
     st->codec->frame_size = s->frame_size;
+=======
+    st->codecpar->codec_type  = AVMEDIA_TYPE_AUDIO;
+    st->codecpar->codec_id    = codec_id;
+    st->codecpar->sample_rate = s->sample_rate;
+    st->codecpar->channels    = s->channels;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     avpriv_set_pts_info(st, 64, 1, 1000000);  /* 64 bits pts in us */
     /* microseconds instead of seconds, MHz instead of Hz */
     s->timefilter = ff_timefilter_new(1000000.0 / s->sample_rate,
@@ -125,11 +132,20 @@ static int audio_read_packet(AVFormatContext *s1, AVPacket *pkt)
         ff_timefilter_reset(s->timefilter);
     }
 
+<<<<<<< HEAD
     dts = av_gettime();
     snd_pcm_delay(s->h, &delay);
     dts -= av_rescale(delay + res, 1000000, s->sample_rate);
     pkt->pts = ff_timefilter_update(s->timefilter, dts, s->last_period);
     s->last_period = res;
+=======
+    snd_pcm_htimestamp(s->h, &ts_delay, &timestamp);
+    ts_delay += res;
+    pkt->pts = timestamp.tv_sec * 1000000LL
+               + (timestamp.tv_nsec * st->codecpar->sample_rate
+                  - (int64_t)ts_delay * 1000000000LL + st->codecpar->sample_rate * 500LL)
+               / (st->codecpar->sample_rate * 1000LL);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     pkt->size = res * s->frame_size;
 

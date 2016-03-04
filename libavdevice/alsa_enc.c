@@ -60,15 +60,20 @@ static av_cold int audio_write_header(AVFormatContext *s1)
         return AVERROR(EINVAL);
     }
     st = s1->streams[0];
+<<<<<<< HEAD
 
     sample_rate = st->codec->sample_rate;
     codec_id    = st->codec->codec_id;
+=======
+    sample_rate = st->codecpar->sample_rate;
+    codec_id    = st->codecpar->codec_id;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     res = ff_alsa_open(s1, SND_PCM_STREAM_PLAYBACK, &sample_rate,
-        st->codec->channels, &codec_id);
-    if (sample_rate != st->codec->sample_rate) {
+        st->codecpar->channels, &codec_id);
+    if (sample_rate != st->codecpar->sample_rate) {
         av_log(s1, AV_LOG_ERROR,
                "sample rate %d not available, nearest is %d\n",
-               st->codec->sample_rate, sample_rate);
+               st->codecpar->sample_rate, sample_rate);
         goto fail;
     }
     avpriv_set_pts_info(st, 64, 1, sample_rate);

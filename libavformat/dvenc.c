@@ -238,20 +238,21 @@ static void dv_inject_metadata(DVMuxContext *c, uint8_t* frame)
  * The following 3 functions constitute our interface to the world
  */
 
-static int dv_assemble_frame(DVMuxContext *c, AVStream* st,
+static int dv_assemble_frame(AVFormatContext *s,
+                             DVMuxContext *c, AVStream* st,
                              uint8_t* data, int data_size, uint8_t** frame)
 {
     int i, reqasize;
 
     *frame = &c->frame_buf[0];
 
-    switch (st->codec->codec_type) {
+    switch (st->codecpar->codec_type) {
     case AVMEDIA_TYPE_VIDEO:
         /* FIXME: we have to have more sensible approach than this one */
         if (c->has_video)
-            av_log(st->codec, AV_LOG_ERROR, "Can't process DV frame #%d. Insufficient audio data or severe sync problem.\n", c->frames);
+            av_log(s, AV_LOG_ERROR, "Can't process DV frame #%d. Insufficient audio data or severe sync problem.\n", c->frames);
         if (data_size != c->sys->frame_size) {
-            av_log(st->codec, AV_LOG_ERROR, "Unexpected frame size, %d != %d\n",
+            av_log(s, AV_LOG_ERROR, "Unexpected frame size, %d != %d\n",
                    data_size, c->sys->frame_size);
             return AVERROR(ENOSYS);
         }
@@ -264,7 +265,7 @@ static int dv_assemble_frame(DVMuxContext *c, AVStream* st,
 
           /* FIXME: we have to have more sensible approach than this one */
         if (av_fifo_size(c->audio_data[i]) + data_size >= 100*MAX_AUDIO_FRAME_SIZE)
-            av_log(st->codec, AV_LOG_ERROR, "Can't process DV frame #%d. Insufficient video data or severe sync problem.\n", c->frames);
+            av_log(s, AV_LOG_ERROR, "Can't process DV frame #%d. Insufficient video data or severe sync problem.\n", c->frames);
         av_fifo_generic_write(c->audio_data[i], data, data_size, NULL);
 
         reqasize = 4 * dv_audio_frame_size(c->sys, c->frames, st->codec->sample_rate);
@@ -313,7 +314,7 @@ static DVMuxContext* dv_init_mux(AVFormatContext* s)
 
     /* We have to sort out where audio and where video stream is */
     for (i=0; i<s->nb_streams; i++) {
-        switch (s->streams[i]->codec->codec_type) {
+        switch (s->streams[i]->codecpar->codec_type) {
         case AVMEDIA_TYPE_VIDEO:
             if (vst) return NULL;
             vst = s->streams[i];
@@ -328,9 +329,10 @@ static DVMuxContext* dv_init_mux(AVFormatContext* s)
     }
 
     /* Some checks -- DV format is very picky about its incoming streams */
-    if (!vst || vst->codec->codec_id != AV_CODEC_ID_DVVIDEO)
+    if (!vst || vst->codecpar->codec_id != AV_CODEC_ID_DVVIDEO)
         goto bail_out;
     for (i=0; i<c->n_ast; i++) {
+<<<<<<< HEAD
         if (c->ast[i]) {
             if(c->ast[i]->codec->codec_id    != AV_CODEC_ID_PCM_S16LE ||
                c->ast[i]->codec->channels    != 2)
@@ -343,6 +345,14 @@ static DVMuxContext* dv_init_mux(AVFormatContext* s)
     }
     c->sys = av_dv_codec_profile2(vst->codec->width, vst->codec->height,
                                   vst->codec->pix_fmt, vst->codec->time_base);
+=======
+        if (c->ast[i] && (c->ast[i]->codecpar->codec_id    != AV_CODEC_ID_PCM_S16LE ||
+                          c->ast[i]->codecpar->sample_rate != 48000 ||
+                          c->ast[i]->codecpar->channels    != 2))
+            goto bail_out;
+    }
+    c->sys = av_dv_codec_profile(vst->codecpar->width, vst->codecpar->height, vst->codecpar->format);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     if (!c->sys)
         goto bail_out;
 
@@ -420,7 +430,7 @@ static int dv_write_packet(struct AVFormatContext *s, AVPacket *pkt)
     uint8_t* frame;
     int fsize;
 
-    fsize = dv_assemble_frame(s->priv_data, s->streams[pkt->stream_index],
+    fsize = dv_assemble_frame(s, s->priv_data, s->streams[pkt->stream_index],
                               pkt->data, pkt->size, &frame);
     if (fsize > 0) {
         avio_write(s->pb, frame, fsize);

@@ -295,7 +295,7 @@ static int hls_mux_init(AVFormatContext *s)
 
         if (!(st = avformat_new_stream(loc, NULL)))
             return AVERROR(ENOMEM);
-        avcodec_copy_context(st->codec, s->streams[i]->codec);
+        avcodec_parameters_copy(st->codecpar, s->streams[i]->codecpar);
         st->sample_aspect_ratio = s->streams[i]->sample_aspect_ratio;
         st->time_base = s->streams[i]->time_base;
     }
@@ -642,10 +642,14 @@ static int hls_write_header(AVFormatContext *s)
 
     for (i = 0; i < s->nb_streams; i++) {
         hls->has_video +=
+<<<<<<< HEAD
             s->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO;
         hls->has_subtitle +=
             s->streams[i]->codec->codec_type == AVMEDIA_TYPE_SUBTITLE;
     }
+=======
+            s->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     if (hls->has_video > 1)
         av_log(s, AV_LOG_WARNING,
@@ -795,7 +799,7 @@ static int hls_write_packet(AVFormatContext *s, AVPacket *pkt)
     }
 
     if (hls->has_video) {
-        can_split = st->codec->codec_type == AVMEDIA_TYPE_VIDEO &&
+        can_split = st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
                     pkt->flags & AV_PKT_FLAG_KEY;
         is_ref_pkt = st->codec->codec_type == AVMEDIA_TYPE_VIDEO;
     }

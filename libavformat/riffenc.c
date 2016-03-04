@@ -51,7 +51,12 @@ void ff_end_tag(AVIOContext *pb, int64_t start)
 
 /* WAVEFORMATEX header */
 /* returns the size or -1 on error */
+<<<<<<< HEAD
 int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
+=======
+int ff_put_wav_header(AVFormatContext *s, AVIOContext *pb,
+                      AVCodecParameters *par)
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 {
     int bps, blkalign, bytespersec, frame_size;
     int hdrsize;
@@ -61,24 +66,31 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
     uint8_t *riff_extradata       = temp;
     uint8_t *riff_extradata_start = temp;
 
-    if (!enc->codec_tag || enc->codec_tag > 0xffff)
+    if (!par->codec_tag || par->codec_tag > 0xffff)
         return -1;
 
     /* We use the known constant frame size for the codec if known, otherwise
      * fall back on using AVCodecContext.frame_size, which is not as reliable
      * for indicating packet duration. */
-    frame_size = av_get_audio_frame_duration(enc, enc->block_align);
+    frame_size = av_get_audio_frame_duration2(par, par->block_align);
 
+<<<<<<< HEAD
     waveformatextensible = (enc->channels > 2 && enc->channel_layout) ||
                            enc->sample_rate > 48000 ||
                            enc->codec_id == AV_CODEC_ID_EAC3 ||
                            av_get_bits_per_sample(enc->codec_id) > 16;
+=======
+    waveformatextensible = (par->channels > 2 && par->channel_layout) ||
+                           par->sample_rate > 48000 ||
+                           av_get_bits_per_sample(par->codec_id) > 16;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     if (waveformatextensible)
         avio_wl16(pb, 0xfffe);
     else
-        avio_wl16(pb, enc->codec_tag);
+        avio_wl16(pb, par->codec_tag);
 
+<<<<<<< HEAD
     avio_wl16(pb, enc->channels);
     avio_wl32(pb, enc->sample_rate);
     if (enc->codec_id == AV_CODEC_ID_ATRAC3 ||
@@ -86,22 +98,30 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
         enc->codec_id == AV_CODEC_ID_MP2    ||
         enc->codec_id == AV_CODEC_ID_MP3    ||
         enc->codec_id == AV_CODEC_ID_GSM_MS) {
+=======
+    avio_wl16(pb, par->channels);
+    avio_wl32(pb, par->sample_rate);
+    if (par->codec_id == AV_CODEC_ID_MP2 ||
+        par->codec_id == AV_CODEC_ID_MP3 ||
+        par->codec_id == AV_CODEC_ID_GSM_MS) {
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         bps = 0;
     } else {
-        if (!(bps = av_get_bits_per_sample(enc->codec_id))) {
-            if (enc->bits_per_coded_sample)
-                bps = enc->bits_per_coded_sample;
+        if (!(bps = av_get_bits_per_sample(par->codec_id))) {
+            if (par->bits_per_coded_sample)
+                bps = par->bits_per_coded_sample;
             else
                 bps = 16;  // default to 16
         }
     }
-    if (bps != enc->bits_per_coded_sample && enc->bits_per_coded_sample) {
-        av_log(enc, AV_LOG_WARNING,
+    if (bps != par->bits_per_coded_sample && par->bits_per_coded_sample) {
+        av_log(s, AV_LOG_WARNING,
                "requested bits_per_coded_sample (%d) "
                "and actually stored (%d) differ\n",
-               enc->bits_per_coded_sample, bps);
+               par->bits_per_coded_sample, bps);
     }
 
+<<<<<<< HEAD
     if (enc->codec_id == AV_CODEC_ID_MP2) {
         blkalign = (144 * enc->bit_rate - 1)/enc->sample_rate + 1;
     } else if (enc->codec_id == AV_CODEC_ID_MP3) {
@@ -125,25 +145,54 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
         bytespersec = enc->sample_rate * blkalign;
     } else if (enc->codec_id == AV_CODEC_ID_G723_1) {
         bytespersec = 800;
+=======
+    if (par->codec_id == AV_CODEC_ID_MP2) {
+        blkalign = frame_size;
+    } else if (par->codec_id == AV_CODEC_ID_MP3) {
+        blkalign = 576 * (par->sample_rate <= 24000 ? 1 : 2);
+    } else if (par->codec_id == AV_CODEC_ID_AC3) {
+        blkalign = 3840;                /* maximum bytes per frame */
+    } else if (par->block_align != 0) { /* specified by the codec */
+        blkalign = par->block_align;
+    } else
+        blkalign = bps * par->channels / av_gcd(8, bps);
+    if (par->codec_id == AV_CODEC_ID_PCM_U8 ||
+        par->codec_id == AV_CODEC_ID_PCM_S24LE ||
+        par->codec_id == AV_CODEC_ID_PCM_S32LE ||
+        par->codec_id == AV_CODEC_ID_PCM_F32LE ||
+        par->codec_id == AV_CODEC_ID_PCM_F64LE ||
+        par->codec_id == AV_CODEC_ID_PCM_S16LE) {
+        bytespersec = par->sample_rate * blkalign;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     } else {
-        bytespersec = enc->bit_rate / 8;
+        bytespersec = par->bit_rate / 8;
     }
     avio_wl32(pb, bytespersec); /* bytes per second */
     avio_wl16(pb, blkalign);    /* block align */
     avio_wl16(pb, bps);         /* bits per sample */
+<<<<<<< HEAD
     if (enc->codec_id == AV_CODEC_ID_MP3) {
+=======
+    if (par->codec_id == AV_CODEC_ID_MP3) {
+        hdrsize += 12;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         bytestream_put_le16(&riff_extradata, 1);    /* wID */
         bytestream_put_le32(&riff_extradata, 2);    /* fdwFlags */
         bytestream_put_le16(&riff_extradata, 1152); /* nBlockSize */
         bytestream_put_le16(&riff_extradata, 1);    /* nFramesPerBlock */
         bytestream_put_le16(&riff_extradata, 1393); /* nCodecDelay */
+<<<<<<< HEAD
     } else if (enc->codec_id == AV_CODEC_ID_MP2) {
+=======
+    } else if (par->codec_id == AV_CODEC_ID_MP2) {
+        hdrsize += 22;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         /* fwHeadLayer */
         bytestream_put_le16(&riff_extradata, 2);
         /* dwHeadBitrate */
-        bytestream_put_le32(&riff_extradata, enc->bit_rate);
+        bytestream_put_le32(&riff_extradata, par->bit_rate);
         /* fwHeadMode */
-        bytestream_put_le16(&riff_extradata, enc->channels == 2 ? 1 : 8);
+        bytestream_put_le16(&riff_extradata, par->channels == 2 ? 1 : 8);
         /* fwHeadModeExt */
         bytestream_put_le16(&riff_extradata, 0);
         /* wHeadEmphasis */
@@ -154,6 +203,7 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
         bytestream_put_le32(&riff_extradata, 0);
         /* dwPTSHigh */
         bytestream_put_le32(&riff_extradata, 0);
+<<<<<<< HEAD
     } else if (enc->codec_id == AV_CODEC_ID_G723_1) {
         bytestream_put_le32(&riff_extradata, 0x9ace0002); /* extradata needed for msacm g723.1 codec */
         bytestream_put_le32(&riff_extradata, 0xaea2f732);
@@ -165,6 +215,17 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
     } else if (enc->extradata_size) {
         riff_extradata_start = enc->extradata;
         riff_extradata       = enc->extradata + enc->extradata_size;
+=======
+    } else if (par->codec_id == AV_CODEC_ID_GSM_MS ||
+               par->codec_id == AV_CODEC_ID_ADPCM_IMA_WAV) {
+        hdrsize += 2;
+        /* wSamplesPerBlock */
+        bytestream_put_le16(&riff_extradata, frame_size);
+    } else if (par->extradata_size) {
+        riff_extradata_start = par->extradata;
+        riff_extradata       = par->extradata + par->extradata_size;
+        hdrsize             += par->extradata_size;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
     /* write WAVEFORMATEXTENSIBLE extensions */
     if (waveformatextensible) {
@@ -176,12 +237,18 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
         /* ValidBitsPerSample || SamplesPerBlock || Reserved */
         avio_wl16(pb, bps);
         /* dwChannelMask */
+<<<<<<< HEAD
         avio_wl32(pb, write_channel_mask ? enc->channel_layout : 0);
         /* GUID + next 3 */
         if (enc->codec_id == AV_CODEC_ID_EAC3) {
             ff_put_guid(pb, ff_get_codec_guid(enc->codec_id, ff_codec_wav_guids));
         } else {
         avio_wl32(pb, enc->codec_tag);
+=======
+        avio_wl32(pb, par->channel_layout);
+        /* GUID + next 3 */
+        avio_wl32(pb, par->codec_tag);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         avio_wl32(pb, 0x00100000);
         avio_wl32(pb, 0xAA000080);
         avio_wl32(pb, 0x719B3800);
@@ -203,8 +270,13 @@ int ff_put_wav_header(AVIOContext *pb, AVCodecContext *enc, int flags)
 }
 
 /* BITMAPINFOHEADER header */
+<<<<<<< HEAD
 void ff_put_bmp_header(AVIOContext *pb, AVCodecContext *enc,
                        const AVCodecTag *tags, int for_asf, int ignore_extradata)
+=======
+void ff_put_bmp_header(AVIOContext *pb, AVCodecParameters *par,
+                       const AVCodecTag *tags, int for_asf)
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 {
     int keep_height = enc->extradata_size >= 9 &&
                       !memcmp(enc->extradata + enc->extradata_size - 9, "BottomUp", 9);
@@ -218,22 +290,35 @@ void ff_put_bmp_header(AVIOContext *pb, AVCodecContext *enc,
         extradata_size = 4 * (1 << enc->bits_per_coded_sample);
 
     /* size */
+<<<<<<< HEAD
     avio_wl32(pb, 40 + (ignore_extradata ? 0 :extradata_size));
     avio_wl32(pb, enc->width);
     //We always store RGB TopDown
     avio_wl32(pb, enc->codec_tag || keep_height ? enc->height : -enc->height);
+=======
+    avio_wl32(pb, 40 + par->extradata_size);
+    avio_wl32(pb, par->width);
+    //We always store RGB TopDown
+    avio_wl32(pb, par->codec_tag ? par->height : -par->height);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     /* planes */
     avio_wl16(pb, 1);
     /* depth */
-    avio_wl16(pb, enc->bits_per_coded_sample ? enc->bits_per_coded_sample : 24);
+    avio_wl16(pb, par->bits_per_coded_sample ? par->bits_per_coded_sample : 24);
     /* compression type */
+<<<<<<< HEAD
     avio_wl32(pb, enc->codec_tag);
     avio_wl32(pb, (enc->width * enc->height * (enc->bits_per_coded_sample ? enc->bits_per_coded_sample : 24)+7) / 8);
+=======
+    avio_wl32(pb, par->codec_tag);
+    avio_wl32(pb, par->width * par->height * 3);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     avio_wl32(pb, 0);
     avio_wl32(pb, 0);
     avio_wl32(pb, 0);
     avio_wl32(pb, 0);
 
+<<<<<<< HEAD
     if (!ignore_extradata) {
         if (enc->extradata_size) {
             avio_write(pb, enc->extradata, extradata_size);
@@ -255,35 +340,45 @@ void ff_put_bmp_header(AVIOContext *pb, AVCodecContext *enc,
             }
         }
     }
+=======
+    avio_write(pb, par->extradata, par->extradata_size);
+
+    if (!for_asf && par->extradata_size & 1)
+        avio_w8(pb, 0);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 }
 
 void ff_parse_specific_params(AVStream *st, int *au_rate,
                               int *au_ssize, int *au_scale)
 {
-    AVCodecContext *codec = st->codec;
+    AVCodecParameters *par = st->codecpar;
     int gcd;
     int audio_frame_size;
 
+<<<<<<< HEAD
     /* We use the known constant frame size for the codec if known, otherwise
      * fall back on using AVCodecContext.frame_size, which is not as reliable
      * for indicating packet duration. */
     audio_frame_size = av_get_audio_frame_duration(codec, 0);
     if (!audio_frame_size)
         audio_frame_size = codec->frame_size;
+=======
+    audio_frame_size = av_get_audio_frame_duration2(par, 0);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
-    *au_ssize = codec->block_align;
-    if (audio_frame_size && codec->sample_rate) {
+    *au_ssize = par->block_align;
+    if (audio_frame_size && par->sample_rate) {
         *au_scale = audio_frame_size;
-        *au_rate  = codec->sample_rate;
-    } else if (codec->codec_type == AVMEDIA_TYPE_VIDEO ||
-               codec->codec_type == AVMEDIA_TYPE_DATA ||
-               codec->codec_type == AVMEDIA_TYPE_SUBTITLE) {
+        *au_rate  = par->sample_rate;
+    } else if (par->codec_type == AVMEDIA_TYPE_VIDEO ||
+               par->codec_type == AVMEDIA_TYPE_DATA ||
+               par->codec_type == AVMEDIA_TYPE_SUBTITLE) {
         *au_scale = st->time_base.num;
         *au_rate  = st->time_base.den;
     } else {
-        *au_scale = codec->block_align ? codec->block_align * 8 : 8;
-        *au_rate  = codec->bit_rate ? codec->bit_rate :
-                    8 * codec->sample_rate;
+        *au_scale = par->block_align ? par->block_align * 8 : 8;
+        *au_rate  = par->bit_rate ? par->bit_rate :
+                    8 * par->sample_rate;
     }
     gcd        = av_gcd(*au_scale, *au_rate);
     *au_scale /= gcd;

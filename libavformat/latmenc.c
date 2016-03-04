@@ -84,13 +84,18 @@ static int latm_decode_extradata(LATMContext *ctx, uint8_t *buf, int size)
 static int latm_write_header(AVFormatContext *s)
 {
     LATMContext *ctx = s->priv_data;
-    AVCodecContext *avctx = s->streams[0]->codec;
+    AVCodecParameters *par = s->streams[0]->codecpar;
 
+<<<<<<< HEAD
     if (avctx->codec_id == AV_CODEC_ID_AAC_LATM)
         return 0;
 
     if (avctx->extradata_size > 0 &&
         latm_decode_extradata(ctx, avctx->extradata, avctx->extradata_size) < 0)
+=======
+    if (par->extradata_size > 0 &&
+        latm_decode_extradata(ctx, par->extradata, par->extradata_size) < 0)
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         return AVERROR_INVALIDDATA;
 
     return 0;
@@ -99,13 +104,23 @@ static int latm_write_header(AVFormatContext *s)
 static void latm_write_frame_header(AVFormatContext *s, PutBitContext *bs)
 {
     LATMContext *ctx = s->priv_data;
+<<<<<<< HEAD
     AVCodecContext *avctx = s->streams[0]->codec;
+=======
+    AVCodecParameters *par = s->streams[0]->codecpar;
+    GetBitContext gb;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     int header_size;
 
     /* AudioMuxElement */
     put_bits(bs, 1, !!ctx->counter);
 
     if (!ctx->counter) {
+<<<<<<< HEAD
+=======
+        init_get_bits(&gb, par->extradata, par->extradata_size * 8);
+
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         /* StreamMuxConfig */
         put_bits(bs, 1, 0); /* audioMuxVersion */
         put_bits(bs, 1, 1); /* allStreamsSameTimeFraming */
@@ -115,12 +130,19 @@ static void latm_write_frame_header(AVFormatContext *s, PutBitContext *bs)
 
         /* AudioSpecificConfig */
         if (ctx->object_type == AOT_ALS) {
+<<<<<<< HEAD
             header_size = avctx->extradata_size-(ctx->off >> 3);
             avpriv_copy_bits(bs, &avctx->extradata[ctx->off >> 3], header_size);
         } else {
             // + 3 assumes not scalable and dependsOnCoreCoder == 0,
             // see decode_ga_specific_config in libavcodec/aacdec.c
             avpriv_copy_bits(bs, avctx->extradata, ctx->off + 3);
+=======
+            header_size = par->extradata_size-(ctx->off + 7) >> 3;
+            avpriv_copy_bits(bs, &par->extradata[ctx->off], header_size);
+        } else {
+            avpriv_copy_bits(bs, par->extradata, ctx->off + 3);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
             if (!ctx->channel_conf) {
                 GetBitContext gb;

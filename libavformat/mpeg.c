@@ -597,6 +597,7 @@ skip:
     if (!st)
         goto skip;
     st->id                = startcode;
+<<<<<<< HEAD
     st->codec->codec_type = type;
     st->codec->codec_id   = codec_id;
     if (   st->codec->codec_id == AV_CODEC_ID_PCM_MULAW
@@ -606,6 +607,10 @@ skip:
         st->codec->sample_rate = 8000;
     }
     st->request_probe     = request_probe;
+=======
+    st->codecpar->codec_type = type;
+    st->codecpar->codec_id   = codec_id;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     st->need_parsing      = AVSTREAM_PARSE_FULL;
 
 found:

@@ -70,12 +70,20 @@ static int cdata_read_header(AVFormatContext *s)
     st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
+<<<<<<< HEAD
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_tag = 0; /* no fourcc */
     st->codec->codec_id = AV_CODEC_ID_ADPCM_EA_XAS;
     st->codec->channels = cdata->channels;
     st->codec->channel_layout = channel_layout;
     st->codec->sample_rate = sample_rate;
+=======
+    st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+    st->codecpar->codec_tag = 0; /* no fourcc */
+    st->codecpar->codec_id = AV_CODEC_ID_ADPCM_EA_XAS;
+    st->codecpar->channels = cdata->channels;
+    st->codecpar->sample_rate = sample_rate;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     avpriv_set_pts_info(st, 64, 1, sample_rate);
 
     cdata->audio_pts = 0;

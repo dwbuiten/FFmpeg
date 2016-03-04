@@ -121,12 +121,23 @@ static int ass_read_header(AVFormatContext *s)
     if (!st)
         return AVERROR(ENOMEM);
     avpriv_set_pts_info(st, 64, 1, 100);
+<<<<<<< HEAD
     st->codec->codec_type = AVMEDIA_TYPE_SUBTITLE;
     st->codec->codec_id   = AV_CODEC_ID_ASS;
 
     av_bprint_init(&header, 0, AV_BPRINT_SIZE_UNLIMITED);
     av_bprint_init(&line,   0, AV_BPRINT_SIZE_UNLIMITED);
     av_bprint_init(&rline,  0, AV_BPRINT_SIZE_UNLIMITED);
+=======
+    st->codecpar->codec_type = AVMEDIA_TYPE_SUBTITLE;
+    st->codecpar->codec_id   = AV_CODEC_ID_SSA;
+
+    header_remaining = INT_MAX;
+    dst[0] = &st->codecpar->extradata;
+    dst[1] = &ass->event_buffer;
+    while (!pb->eof_reached) {
+        uint8_t line[MAX_LINESIZE];
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     ass->q.keep_duplicates = 1;
 
@@ -142,6 +153,7 @@ static int ass_read_header(AVFormatContext *s)
         if (read_dialogue(ass, &rline, line.str, &ts_start, &duration) < 0) {
             av_bprintf(&header, "%s", line.str);
             continue;
+<<<<<<< HEAD
         }
         sub = ff_subtitles_queue_insert(&ass->q, rline.str, rline.len, 0);
         if (!sub) {
@@ -151,6 +163,32 @@ static int ass_read_header(AVFormatContext *s)
         sub->pos = pos;
         sub->pts = ts_start;
         sub->duration = duration;
+=======
+
+        p = av_fast_realloc(*(dst[i]), &allocated[i], pos[i] + MAX_LINESIZE);
+        if (!p)
+            goto fail;
+        *(dst[i]) = p;
+        memcpy(p + pos[i], line, len + 1);
+        pos[i] += len;
+        if (i)
+            ass->event_count++;
+        else
+            header_remaining--;
+    }
+    st->codecpar->extradata_size = pos[0];
+
+    if (ass->event_count >= UINT_MAX / sizeof(*ass->event))
+        goto fail;
+
+    ass->event = av_malloc(ass->event_count * sizeof(*ass->event));
+    p = ass->event_buffer;
+    for (i = 0; i < ass->event_count; i++) {
+        ass->event[i] = p;
+        while (*p && *p != '\n')
+            p++;
+        p++;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
 
     res = avpriv_bprint_to_extradata(st->codec, &header);
@@ -169,7 +207,30 @@ end:
 static int ass_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
     ASSContext *ass = s->priv_data;
+<<<<<<< HEAD
     return ff_subtitles_queue_read_packet(&ass->q, pkt);
+=======
+    uint8_t *p, *end;
+    int ret;
+
+    if (ass->event_index >= ass->event_count)
+        return AVERROR(EIO);
+
+    p = ass->event[ass->event_index];
+
+    end = strchr(p, '\n');
+    ret = av_new_packet(pkt, end ? end - p + 1 : strlen(p));
+    if (ret < 0)
+        return ret;
+    pkt->flags |= AV_PKT_FLAG_KEY;
+    pkt->pos    = p - ass->event_buffer + s->streams[0]->codecpar->extradata_size;
+    pkt->pts    = pkt->dts = get_pts(p);
+    memcpy(pkt->data, p, pkt->size);
+
+    ass->event_index++;
+
+    return 0;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 }
 
 static int ass_read_seek(AVFormatContext *s, int stream_index,

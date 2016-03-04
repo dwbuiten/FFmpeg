@@ -295,7 +295,7 @@ static int mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
             err = 1;
             break;
         }
-        switch (st->codec->codec_id) {
+        switch (st->codecpar->codec_id) {
         case AV_CODEC_ID_MPEG1VIDEO:
         case AV_CODEC_ID_MPEG2VIDEO:
             stream_type = STREAM_TYPE_VIDEO_MPEG2;
@@ -360,8 +360,9 @@ static int mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
         q += 2; /* patched after */
 
         /* write optional descriptors here */
-        switch (st->codec->codec_type) {
+        switch (st->codecpar->codec_type) {
         case AVMEDIA_TYPE_AUDIO:
+<<<<<<< HEAD
             if (st->codec->codec_id==AV_CODEC_ID_AC3 && (ts->flags & MPEGTS_FLAG_SYSTEM_B)) {
                 *q++=0x6a; // AC3 descriptor see A038 DVB SI
                 *q++=1; // 1 byte, all flags sets to 0
@@ -455,6 +456,12 @@ static int mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
                     av_log(s, AV_LOG_ERROR, "Unsupported Opus channel mapping");
                     *q++ = 0xff;
                 }
+=======
+            if (st->codecpar->codec_id == AV_CODEC_ID_AC3 && (ts->flags & MPEGTS_FLAG_SYSTEM_B)) {
+                *q++ = 0x6a; /* ETSI EN 300 468 AC-3 descriptor */
+                *q++ = 1;
+                *q++ = 0x00;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             }
 
             if (lang) {
@@ -497,6 +504,7 @@ static int mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
             break;
         case AVMEDIA_TYPE_SUBTITLE:
         {
+<<<<<<< HEAD
            const char default_language[] = "und";
            const char *language = lang && strlen(lang->value) >= 3 ? lang->value : default_language;
 
@@ -573,6 +581,28 @@ static int mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
                }
 
                *len_ptr = q - len_ptr - 1;
+=======
+            const char *language;
+            language = lang && strlen(lang->value) == 3 ? lang->value : "eng";
+            *q++ = 0x59;
+            *q++ = 8;
+            *q++ = language[0];
+            *q++ = language[1];
+            *q++ = language[2];
+            *q++ = 0x10; /* normal subtitles (0x20 = if hearing pb) */
+
+            if (q - data > SECTION_LENGTH - 4) {
+                err = 1;
+                break;
+            }
+
+            if (st->codecpar->extradata_size == 4) {
+                memcpy(q, st->codecpar->extradata, 4);
+                q += 4;
+            } else {
+                put16(&q, 1);     /* page id */
+                put16(&q, 1);     /* ancillary page id */
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             }
         }
         break;
@@ -855,13 +885,13 @@ static int mpegts_init(AVFormatContext *s)
         ts_st->first_pts_check = 1;
         ts_st->cc              = 15;
         /* update PCR pid by using the first video stream */
-        if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO &&
+        if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
             service->pcr_pid == 0x1fff) {
             service->pcr_pid = ts_st->pid;
             pcr_st           = st;
         }
-        if (st->codec->codec_id == AV_CODEC_ID_AAC &&
-            st->codec->extradata_size > 0) {
+        if (st->codecpar->codec_id == AV_CODEC_ID_AAC &&
+            st->codecpar->extradata_size > 0) {
             AVStream *ast;
             ts_st->amux = avformat_alloc_context();
             if (!ts_st->amux) {
@@ -879,7 +909,7 @@ static int mpegts_init(AVFormatContext *s)
                 ret = AVERROR(ENOMEM);
                 goto fail;
             }
-            ret = avcodec_copy_context(ast->codec, st->codec);
+            ret = avcodec_parameters_copy(ast->codecpar, st->codecpar);
             if (ret != 0)
                 goto fail;
             ast->time_base = st->time_base;
@@ -916,14 +946,15 @@ static int mpegts_init(AVFormatContext *s)
         /* Arbitrary values, PAT/PMT will also be written on video key frames */
         ts->sdt_packet_period = 200;
         ts->pat_packet_period = 40;
-        if (pcr_st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-            if (!pcr_st->codec->frame_size) {
+        if (pcr_st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+            int frame_size = av_get_audio_frame_duration2(pcr_st->codecpar, 0);
+            if (!frame_size) {
                 av_log(s, AV_LOG_WARNING, "frame size not set\n");
                 service->pcr_packet_period =
-                    pcr_st->codec->sample_rate / (10 * 512);
+                    pcr_st->codecpar->sample_rate / (10 * 512);
             } else {
                 service->pcr_packet_period =
-                    pcr_st->codec->sample_rate / (10 * pcr_st->codec->frame_size);
+                    pcr_st->codecpar->sample_rate / (10 * frame_size);
             }
         } else {
             // max delta PCR 0.1s
@@ -1192,17 +1223,23 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
             *q++ = 0x00;
             *q++ = 0x00;
             *q++ = 0x01;
+<<<<<<< HEAD
             is_dvb_subtitle = 0;
             is_dvb_teletext = 0;
             if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
                 if (st->codec->codec_id == AV_CODEC_ID_DIRAC)
+=======
+            private_code = 0;
+            if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+                if (st->codecpar->codec_id == AV_CODEC_ID_DIRAC)
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                     *q++ = 0xfd;
                 else
                     *q++ = 0xe0;
-            } else if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO &&
-                       (st->codec->codec_id == AV_CODEC_ID_MP2 ||
-                        st->codec->codec_id == AV_CODEC_ID_MP3 ||
-                        st->codec->codec_id == AV_CODEC_ID_AAC)) {
+            } else if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO &&
+                       (st->codecpar->codec_id == AV_CODEC_ID_MP2 ||
+                        st->codecpar->codec_id == AV_CODEC_ID_MP3 ||
+                        st->codecpar->codec_id == AV_CODEC_ID_AAC)) {
                 *q++ = 0xc0;
             } else if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO &&
                         st->codec->codec_id == AV_CODEC_ID_AC3 &&
@@ -1215,6 +1252,7 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
                     pts = dts = AV_NOPTS_VALUE;
             } else {
                 *q++ = 0xbd;
+<<<<<<< HEAD
                 if (st->codec->codec_type == AVMEDIA_TYPE_SUBTITLE) {
                     if (st->codec->codec_id == AV_CODEC_ID_DVB_SUBTITLE) {
                         is_dvb_subtitle = 1;
@@ -1222,6 +1260,10 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
                         is_dvb_teletext = 1;
                     }
                 }
+=======
+                if (st->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
+                    private_code = 0x20;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             }
             header_len = 0;
             flags      = 0;
@@ -1233,8 +1275,8 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
                 header_len += 5;
                 flags      |= 0x40;
             }
-            if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO &&
-                st->codec->codec_id == AV_CODEC_ID_DIRAC) {
+            if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
+                st->codecpar->codec_id == AV_CODEC_ID_DIRAC) {
                 /* set PES_extension_flag */
                 pes_extension = 1;
                 flags        |= 0x01;
@@ -1273,8 +1315,13 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
             *q++ = len >> 8;
             *q++ = len;
             val  = 0x80;
+<<<<<<< HEAD
             /* data alignment indicator is required for subtitle and data streams */
             if (st->codec->codec_type == AVMEDIA_TYPE_SUBTITLE || st->codec->codec_type == AVMEDIA_TYPE_DATA)
+=======
+            /* data alignment indicator is required for subtitle data */
+            if (st->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                 val |= 0x04;
             *q++ = val;
             *q++ = flags;
@@ -1287,7 +1334,7 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
                 write_pts(q, 1, dts);
                 q += 5;
             }
-            if (pes_extension && st->codec->codec_id == AV_CODEC_ID_DIRAC) {
+            if (pes_extension && st->codecpar->codec_id == AV_CODEC_ID_DIRAC) {
                 flags = 0x01;  /* set PES_extension_flag_2 */
                 *q++  = flags;
                 *q++  = 0x80 | 0x01; /* marker bit + extension length */
@@ -1492,7 +1539,7 @@ static int mpegts_write_packet_internal(AVFormatContext *s, AVPacket *pkt)
     }
     ts_st->first_pts_check = 0;
 
-    if (st->codec->codec_id == AV_CODEC_ID_H264) {
+    if (st->codecpar->codec_id == AV_CODEC_ID_H264) {
         const uint8_t *p = buf, *buf_end = p + size;
         uint32_t state = -1;
         int extradd = (pkt->flags & AV_PKT_FLAG_KEY) ? st->codec->extradata_size : 0;
@@ -1525,7 +1572,7 @@ static int mpegts_write_packet_internal(AVFormatContext *s, AVPacket *pkt)
             buf     = data;
             size    = pkt->size + 6 + extradd;
         }
-    } else if (st->codec->codec_id == AV_CODEC_ID_AAC) {
+    } else if (st->codecpar->codec_id == AV_CODEC_ID_AAC) {
         if (pkt->size < 2) {
             av_log(s, AV_LOG_ERROR, "AAC packet too short\n");
             return AVERROR_INVALIDDATA;
@@ -1635,6 +1682,7 @@ static int mpegts_write_packet_internal(AVFormatContext *s, AVPacket *pkt)
         }
     }
 
+<<<<<<< HEAD
     if (pkt->dts != AV_NOPTS_VALUE) {
         int i;
         for(i=0; i<s->nb_streams; i++) {
@@ -1648,6 +1696,14 @@ static int mpegts_write_packet_internal(AVFormatContext *s, AVPacket *pkt)
                 ts_st2->payload_size = 0;
             }
         }
+=======
+    if (st->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
+        // for video and subtitle, write a single pes packet
+        mpegts_write_pes(s, st, buf, size, pts, dts,
+                         pkt->flags & AV_PKT_FLAG_KEY);
+        av_free(data);
+        return 0;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     }
 
     if (ts_st->payload_size && (ts_st->payload_size + size > ts->pes_payload_size ||

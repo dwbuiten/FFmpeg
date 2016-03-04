@@ -82,14 +82,29 @@ static int read_header(AVFormatContext *avctx)
         ret = AVERROR(ENOMEM);
         goto fail;
     }
-    st->codec->codec_tag   = 0;
-    st->codec->codec_type  = AVMEDIA_TYPE_VIDEO;
-    st->codec->codec_id    = AV_CODEC_ID_ANSI;
+    st->codecpar->codec_tag   = 0;
+    st->codecpar->codec_type  = AVMEDIA_TYPE_VIDEO;
+    st->codecpar->codec_id    = AV_CODEC_ID_ANSI;
 
+<<<<<<< HEAD
     st->codec->width  = s->width;
     st->codec->height = s->height;
     avpriv_set_pts_info(st, 60, s->framerate.den, s->framerate.num);
     st->avg_frame_rate = s->framerate;
+=======
+    if (s->video_size && (ret = av_parse_video_size(&width, &height, s->video_size)) < 0) {
+        av_log (avctx, AV_LOG_ERROR, "Couldn't parse video size.\n");
+        goto fail;
+    }
+    if ((ret = av_parse_video_rate(&framerate, s->framerate)) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "Could not parse framerate: %s.\n", s->framerate);
+        goto fail;
+    }
+    st->codecpar->width  = width;
+    st->codecpar->height = height;
+    avpriv_set_pts_info(st, 60, framerate.den, framerate.num);
+    st->avg_frame_rate = framerate;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     /* simulate tty display speed */
     s->chars_per_frame = FFMAX(av_q2d(st->time_base)*s->chars_per_frame, 1);

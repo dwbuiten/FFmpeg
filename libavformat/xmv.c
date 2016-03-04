@@ -166,11 +166,11 @@ static int xmv_read_header(AVFormatContext *s)
 
     avpriv_set_pts_info(vst, 32, 1, 1000);
 
-    vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    vst->codec->codec_id   = AV_CODEC_ID_WMV2;
-    vst->codec->codec_tag  = MKBETAG('W', 'M', 'V', '2');
-    vst->codec->width      = avio_rl32(pb);
-    vst->codec->height     = avio_rl32(pb);
+    vst->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+    vst->codecpar->codec_id   = AV_CODEC_ID_WMV2;
+    vst->codecpar->codec_tag  = MKBETAG('W', 'M', 'V', '2');
+    vst->codecpar->width      = avio_rl32(pb);
+    vst->codecpar->height     = avio_rl32(pb);
 
     vst->duration          = avio_rl32(pb);
 
@@ -231,6 +231,7 @@ static int xmv_read_header(AVFormatContext *s)
             goto fail;
         }
 
+<<<<<<< HEAD
         ast->codec->codec_type            = AVMEDIA_TYPE_AUDIO;
         ast->codec->codec_id              = packet->codec_id;
         ast->codec->codec_tag             = packet->compression;
@@ -239,6 +240,16 @@ static int xmv_read_header(AVFormatContext *s)
         ast->codec->bits_per_coded_sample = packet->bits_per_sample;
         ast->codec->bit_rate              = packet->bit_rate;
         ast->codec->block_align           = 36 * packet->channels;
+=======
+        ast->codecpar->codec_type            = AVMEDIA_TYPE_AUDIO;
+        ast->codecpar->codec_id              = track->codec_id;
+        ast->codecpar->codec_tag             = track->compression;
+        ast->codecpar->channels              = track->channels;
+        ast->codecpar->sample_rate           = track->sample_rate;
+        ast->codecpar->bits_per_coded_sample = track->bits_per_sample;
+        ast->codecpar->bit_rate              = track->bit_rate;
+        ast->codecpar->block_align           = 36 * track->channels;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
         avpriv_set_pts_info(ast, 32, packet->block_samples, packet->sample_rate);
 
@@ -381,14 +392,23 @@ static int xmv_process_packet_header(AVFormatContext *s)
 
                 av_assert0(xmv->video.stream_index < s->nb_streams);
 
+<<<<<<< HEAD
                 if (vst->codec->extradata_size < 4) {
                     av_freep(&vst->codec->extradata);
 
                     if ((ret = ff_alloc_extradata(vst->codec, 4)) < 0)
                         return ret;
+=======
+                if (vst->codecpar->extradata_size < 4) {
+                    av_free(vst->codecpar->extradata);
+
+                    vst->codecpar->extradata =
+                        av_malloc(4 + AV_INPUT_BUFFER_PADDING_SIZE);
+                    vst->codecpar->extradata_size = 4;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                 }
 
-                memcpy(vst->codec->extradata, xmv->video.extradata, 4);
+                memcpy(vst->codecpar->extradata, xmv->video.extradata, 4);
             }
         }
     }

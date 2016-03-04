@@ -360,6 +360,7 @@ static int iff_read_header(AVFormatContext *s)
     if (!st)
         return AVERROR(ENOMEM);
 
+<<<<<<< HEAD
     st->codec->channels = 1;
     st->codec->channel_layout = AV_CH_LAYOUT_MONO;
     iff->is_64bit = avio_rl32(pb) == ID_FRM8;
@@ -374,6 +375,13 @@ static int iff_read_header(AVFormatContext *s)
     iff->svx8_compression = -1;
     iff->maud_bits = -1;
     iff->maud_compression = -1;
+=======
+    st->codecpar->channels = 1;
+    st->codecpar->channel_layout = AV_CH_LAYOUT_MONO;
+    avio_skip(pb, 8);
+    // codec_tag used by ByteRun1 decoder to distinguish progressive (PBM) and interlaced (ILBM) content
+    st->codecpar->codec_tag = avio_rl32(pb);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     while(!avio_feof(pb)) {
         uint64_t orig_pos;
@@ -386,12 +394,12 @@ static int iff_read_header(AVFormatContext *s)
 
         switch(chunk_id) {
         case ID_VHDR:
-            st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
+            st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
 
             if (data_size < 14)
                 return AVERROR_INVALIDDATA;
             avio_skip(pb, 12);
-            st->codec->sample_rate = avio_rb16(pb);
+            st->codecpar->sample_rate = avio_rb16(pb);
             if (data_size >= 16) {
                 avio_skip(pb, 1);
                 iff->svx8_compression = avio_r8(pb);
@@ -434,11 +442,11 @@ static int iff_read_header(AVFormatContext *s)
             if (data_size < 4)
                 return AVERROR_INVALIDDATA;
             if (avio_rb32(pb) < 6) {
-                st->codec->channels       = 1;
-                st->codec->channel_layout = AV_CH_LAYOUT_MONO;
+                st->codecpar->channels       = 1;
+                st->codecpar->channel_layout = AV_CH_LAYOUT_MONO;
             } else {
-                st->codec->channels       = 2;
-                st->codec->channel_layout = AV_CH_LAYOUT_STEREO;
+                st->codecpar->channels       = 2;
+                st->codecpar->channel_layout = AV_CH_LAYOUT_STEREO;
             }
             break;
 
@@ -454,21 +462,30 @@ static int iff_read_header(AVFormatContext *s)
                         data_size);
                  return AVERROR_INVALIDDATA;
             }
+<<<<<<< HEAD
             st->codec->extradata_size = data_size + IFF_EXTRA_VIDEO_SIZE;
             st->codec->extradata      = av_malloc(data_size + IFF_EXTRA_VIDEO_SIZE + AV_INPUT_BUFFER_PADDING_SIZE);
             if (!st->codec->extradata)
                 return AVERROR(ENOMEM);
             if (avio_read(pb, st->codec->extradata + IFF_EXTRA_VIDEO_SIZE, data_size) < 0)
+=======
+            st->codecpar->extradata_size = data_size;
+            st->codecpar->extradata      = av_malloc(data_size);
+            if (!st->codecpar->extradata)
+                return AVERROR(ENOMEM);
+            if (avio_read(pb, st->codecpar->extradata, data_size) < 0)
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                 return AVERROR(EIO);
             break;
 
         case ID_BMHD:
-            st->codec->codec_type            = AVMEDIA_TYPE_VIDEO;
+            st->codecpar->codec_type            = AVMEDIA_TYPE_VIDEO;
             if (data_size <= 8)
                 return AVERROR_INVALIDDATA;
-            st->codec->width                 = avio_rb16(pb);
-            st->codec->height                = avio_rb16(pb);
+            st->codecpar->width                 = avio_rb16(pb);
+            st->codecpar->height                = avio_rb16(pb);
             avio_skip(pb, 4); // x, y offset
+<<<<<<< HEAD
             st->codec->bits_per_coded_sample = avio_r8(pb);
             if (data_size >= 10)
                 masking                      = avio_r8(pb);
@@ -477,6 +494,12 @@ static int iff_read_header(AVFormatContext *s)
             if (data_size >= 14) {
                 avio_skip(pb, 1); // padding
                 transparency                 = avio_rb16(pb);
+=======
+            st->codecpar->bits_per_coded_sample = avio_r8(pb);
+            if (data_size >= 11) {
+                avio_skip(pb, 1); // masking
+                compression                  = avio_r8(pb);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             }
             if (data_size >= 16) {
                 st->sample_aspect_ratio.num  = avio_r8(pb);
@@ -628,10 +651,11 @@ static int iff_read_header(AVFormatContext *s)
 
     avio_seek(pb, iff->body_pos, SEEK_SET);
 
-    switch(st->codec->codec_type) {
+    switch(st->codecpar->codec_type) {
     case AVMEDIA_TYPE_AUDIO:
-        avpriv_set_pts_info(st, 32, 1, st->codec->sample_rate);
+        avpriv_set_pts_info(st, 32, 1, st->codecpar->sample_rate);
 
+<<<<<<< HEAD
         if (st->codec->codec_tag == ID_16SV)
             st->codec->codec_id = AV_CODEC_ID_PCM_S16BE_PLANAR;
         else if (st->codec->codec_tag == ID_MAUD) {
@@ -675,6 +699,39 @@ static int iff_read_header(AVFormatContext *s)
         if ((screenmode & 0x800 /* Hold And Modify */) && iff->bpp <= 8) {
             iff->ham      = iff->bpp > 6 ? 6 : 4;
             st->codec->bits_per_coded_sample = 24;
+=======
+        switch(compression) {
+        case COMP_NONE:
+            st->codecpar->codec_id = AV_CODEC_ID_PCM_S8_PLANAR;
+            break;
+        case COMP_FIB:
+            st->codecpar->codec_id = AV_CODEC_ID_8SVX_FIB;
+            break;
+        case COMP_EXP:
+            st->codecpar->codec_id = AV_CODEC_ID_8SVX_EXP;
+            break;
+        default:
+            av_log(s, AV_LOG_ERROR, "unknown compression method\n");
+            return -1;
+        }
+
+        st->codecpar->bits_per_coded_sample = 8;
+        st->codecpar->bit_rate    = st->codecpar->channels * st->codecpar->sample_rate * st->codecpar->bits_per_coded_sample;
+        st->codecpar->block_align = st->codecpar->channels * st->codecpar->bits_per_coded_sample;
+        break;
+
+    case AVMEDIA_TYPE_VIDEO:
+        switch (compression) {
+        case BITMAP_RAW:
+            st->codecpar->codec_id = AV_CODEC_ID_IFF_ILBM;
+            break;
+        case BITMAP_BYTERUN1:
+            st->codecpar->codec_id = AV_CODEC_ID_IFF_BYTERUN1;
+            break;
+        default:
+            av_log(s, AV_LOG_ERROR, "unknown compression method\n");
+            return AVERROR_INVALIDDATA;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         }
         iff->flags        = (screenmode & 0x80 /* Extra HalfBrite */) && iff->bpp <= 8;
         iff->masking      = masking;

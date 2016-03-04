@@ -1,3 +1,9 @@
+<<<<<<< HEAD
 0d229f87b3aad778074ace499359d137 *./tests/data/lavf/lavf.flv
 329554 ./tests/data/lavf/lavf.flv
 ./tests/data/lavf/lavf.flv CRC=0x4eac88c5
+=======
+689e8e53031a2c0793fb5b99fc6f1024 *./tests/data/lavf/lavf.flv
+329521 ./tests/data/lavf/lavf.flv
+./tests/data/lavf/lavf.flv CRC=0x881785d1
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf

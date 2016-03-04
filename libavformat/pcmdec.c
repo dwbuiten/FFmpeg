@@ -42,23 +42,55 @@ static int pcm_read_header(AVFormatContext *s)
         return AVERROR(ENOMEM);
 
 
-    st->codec->codec_type  = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_id    = s->iformat->raw_codec_id;
-    st->codec->sample_rate = s1->sample_rate;
-    st->codec->channels    = s1->channels;
+    st->codecpar->codec_type  = AVMEDIA_TYPE_AUDIO;
+    st->codecpar->codec_id    = s->iformat->raw_codec_id;
+    st->codecpar->sample_rate = s1->sample_rate;
+    st->codecpar->channels    = s1->channels;
 
-    st->codec->bits_per_coded_sample =
-        av_get_bits_per_sample(st->codec->codec_id);
+    st->codecpar->bits_per_coded_sample =
+        av_get_bits_per_sample(st->codecpar->codec_id);
 
+<<<<<<< HEAD
     av_assert0(st->codec->bits_per_coded_sample > 0);
+=======
+    assert(st->codecpar->bits_per_coded_sample > 0);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
-    st->codec->block_align =
-        st->codec->bits_per_coded_sample * st->codec->channels / 8;
+    st->codecpar->block_align =
+        st->codecpar->bits_per_coded_sample * st->codecpar->channels / 8;
 
-    avpriv_set_pts_info(st, 64, 1, st->codec->sample_rate);
+    avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
     return 0;
 }
 
+<<<<<<< HEAD
+=======
+static int pcm_read_packet(AVFormatContext *s, AVPacket *pkt)
+{
+    int ret, size, bps;
+    //    AVStream *st = s->streams[0];
+
+    size= RAW_SAMPLES*s->streams[0]->codecpar->block_align;
+
+    ret= av_get_packet(s->pb, pkt, size);
+
+    pkt->stream_index = 0;
+    if (ret < 0)
+        return ret;
+
+    bps= av_get_bits_per_sample(s->streams[0]->codecpar->codec_id);
+    if (!bps) {
+        av_log(s, AV_LOG_ERROR, "Unknown number of bytes per sample.\n");
+        return AVERROR(EINVAL);
+    }
+
+    pkt->dts=
+    pkt->pts= pkt->pos*8 / (bps * s->streams[0]->codecpar->channels);
+
+    return ret;
+}
+
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 static const AVOption pcm_options[] = {
     { "sample_rate", "", offsetof(PCMAudioDemuxerContext, sample_rate), AV_OPT_TYPE_INT, {.i64 = 44100}, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
     { "channels",    "", offsetof(PCMAudioDemuxerContext, channels),    AV_OPT_TYPE_INT, {.i64 = 1}, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },

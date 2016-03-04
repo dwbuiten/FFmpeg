@@ -130,6 +130,26 @@ struct AVStreamInternal {
      * from dts.
      */
     int reorder;
+<<<<<<< HEAD
+=======
+    /**
+     * The codec context used by avformat_find_stream_info, the parser, etc.
+     */
+    AVCodecContext *avctx;
+    /**
+     * 1 if avctx has been initialized with the values from the codec parameters
+     */
+    int avctx_inited;
+
+    enum AVCodecID orig_codec_id;
+
+#if FF_API_LAVF_AVCTX
+    // whether the deprecated stream codec context needs
+    // to be filled from the codec parameters
+    int need_codec_update;
+#endif
+};
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     /**
      * bitstream filter to run on stream

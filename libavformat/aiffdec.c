@@ -95,7 +95,7 @@ static int get_aiff_header(AVFormatContext *s, int size,
                                     unsigned version)
 {
     AVIOContext *pb        = s->pb;
-    AVCodecContext *codec  = s->streams[0]->codec;
+    AVCodecParameters *par = s->streams[0]->codecpar;
     AIFFInputContext *aiff = s->priv_data;
     int exp;
     uint64_t val;
@@ -104,13 +104,14 @@ static int get_aiff_header(AVFormatContext *s, int size,
 
     if (size & 1)
         size++;
-    codec->codec_type = AVMEDIA_TYPE_AUDIO;
-    codec->channels = avio_rb16(pb);
+    par->codec_type = AVMEDIA_TYPE_AUDIO;
+    par->channels = avio_rb16(pb);
     num_frames = avio_rb32(pb);
-    codec->bits_per_coded_sample = avio_rb16(pb);
+    par->bits_per_coded_sample = avio_rb16(pb);
 
     exp = avio_rb16(pb) - 16383 - 63;
     val = avio_rb64(pb);
+<<<<<<< HEAD
     if (exp <-63 || exp >63) {
         av_log(s, AV_LOG_ERROR, "exp %d is out of range\n", exp);
         return AVERROR_INVALIDDATA;
@@ -133,15 +134,25 @@ static int get_aiff_header(AVFormatContext *s, int size,
             av_get_codec_tag_string(tag, sizeof(tag), codec->codec_tag);
             avpriv_request_sample(s, "unknown or unsupported codec tag: %s", tag);
         }
+=======
+    sample_rate = ldexp(val, exp - 16383 - 63);
+    par->sample_rate = sample_rate;
+    size -= 18;
+
+    /* get codec id for AIFF-C */
+    if (version == AIFF_C_VERSION1) {
+        par->codec_tag = avio_rl32(pb);
+        par->codec_id  = ff_codec_get_id(ff_codec_aiff_tags, par->codec_tag);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         size -= 4;
     }
 
-    if (version != AIFF_C_VERSION1 || codec->codec_id == AV_CODEC_ID_PCM_S16BE) {
-        codec->codec_id = aiff_codec_get_id(codec->bits_per_coded_sample);
-        codec->bits_per_coded_sample = av_get_bits_per_sample(codec->codec_id);
+    if (version != AIFF_C_VERSION1 || par->codec_id == AV_CODEC_ID_PCM_S16BE) {
+        par->codec_id = aiff_codec_get_id(par->bits_per_coded_sample);
+        par->bits_per_coded_sample = av_get_bits_per_sample(par->codec_id);
         aiff->block_duration = 1;
     } else {
-        switch (codec->codec_id) {
+        switch (par->codec_id) {
         case AV_CODEC_ID_PCM_F32BE:
         case AV_CODEC_ID_PCM_F64BE:
         case AV_CODEC_ID_PCM_S16LE:
@@ -150,39 +161,54 @@ static int get_aiff_header(AVFormatContext *s, int size,
             aiff->block_duration = 1;
             break;
         case AV_CODEC_ID_ADPCM_IMA_QT:
-            codec->block_align = 34*codec->channels;
+            par->block_align = 34 * par->channels;
             break;
         case AV_CODEC_ID_MACE3:
-            codec->block_align = 2*codec->channels;
+            par->block_align = 2 * par->channels;
             break;
         case AV_CODEC_ID_ADPCM_G726LE:
             codec->bits_per_coded_sample = 5;
         case AV_CODEC_ID_ADPCM_IMA_WS:
         case AV_CODEC_ID_ADPCM_G722:
         case AV_CODEC_ID_MACE6:
+<<<<<<< HEAD
         case AV_CODEC_ID_SDX2_DPCM:
             codec->block_align = 1*codec->channels;
+=======
+            par->block_align = 1 * par->channels;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             break;
         case AV_CODEC_ID_GSM:
-            codec->block_align = 33;
+            par->block_align = 33;
             break;
+<<<<<<< HEAD
+=======
+        case AV_CODEC_ID_QCELP:
+            par->block_align = 35;
+            break;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         default:
             aiff->block_duration = 1;
             break;
         }
-        if (codec->block_align > 0)
-            aiff->block_duration = av_get_audio_frame_duration(codec,
-                                                               codec->block_align);
+        if (par->block_align > 0)
+            aiff->block_duration = av_get_audio_frame_duration2(par,
+                                                                par->block_align);
     }
 
     /* Block align needs to be computed in all cases, as the definition
      * is specific to applications -> here we use the WAVE format definition */
+<<<<<<< HEAD
     if (!codec->block_align)
         codec->block_align = (av_get_bits_per_sample(codec->codec_id) * codec->channels) >> 3;
+=======
+    if (!par->block_align)
+        par->block_align = (par->bits_per_coded_sample * par->channels) >> 3;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     if (aiff->block_duration) {
-        codec->bit_rate = codec->sample_rate * (codec->block_align << 3) /
-                          aiff->block_duration;
+        par->bit_rate = par->sample_rate * (par->block_align << 3) /
+                        aiff->block_duration;
     }
 
     /* Chunk is over */
@@ -288,7 +314,11 @@ static int aiff_read_header(AVFormatContext *s)
             offset = avio_rb32(pb);      /* Offset of sound data */
             avio_rb32(pb);               /* BlockSize... don't care */
             offset += avio_tell(pb);    /* Compute absolute data offset */
+<<<<<<< HEAD
             if (st->codec->block_align && !pb->seekable)    /* Assume COMM already parsed */
+=======
+            if (st->codecpar->block_align)    /* Assume COMM already parsed */
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                 goto got_sound;
             if (!pb->seekable) {
                 av_log(s, AV_LOG_ERROR, "file is not seekable\n");
@@ -299,6 +329,7 @@ static int aiff_read_header(AVFormatContext *s)
         case MKTAG('w', 'a', 'v', 'e'):
             if ((uint64_t)size > (1<<30))
                 return -1;
+<<<<<<< HEAD
             if (ff_get_extradata(st->codec, pb, size) < 0)
                 return AVERROR(ENOMEM);
             if (st->codec->codec_id == AV_CODEC_ID_QDM2 && size>=12*4 && !st->codec->block_align) {
@@ -320,6 +351,13 @@ static int aiff_read_header(AVFormatContext *s)
                 st->codec->bit_rate = st->codec->sample_rate * (st->codec->block_align << 3) /
                                       aiff->block_duration;
             }
+=======
+            st->codecpar->extradata = av_mallocz(size + AV_INPUT_BUFFER_PADDING_SIZE);
+            if (!st->codecpar->extradata)
+                return AVERROR(ENOMEM);
+            st->codecpar->extradata_size = size;
+            avio_read(pb, st->codecpar->extradata, size);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             break;
         case MKTAG('C','H','A','N'):
             if(ff_mov_read_chan(s, pb, st, size) < 0)
@@ -336,13 +374,13 @@ static int aiff_read_header(AVFormatContext *s)
     }
 
 got_sound:
-    if (!st->codec->block_align) {
+    if (!st->codecpar->block_align) {
         av_log(s, AV_LOG_ERROR, "could not find COMM tag or invalid block_align value\n");
         return -1;
     }
 
     /* Now positioned, get the sound data start and end */
-    avpriv_set_pts_info(st, 64, 1, st->codec->sample_rate);
+    avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
     st->start_time = 0;
     st->duration = st->nb_frames * aiff->block_duration;
 
@@ -368,6 +406,7 @@ static int aiff_read_packet(AVFormatContext *s,
         return AVERROR_EOF;
 
     /* Now for that packet */
+<<<<<<< HEAD
     switch (st->codec->codec_id) {
     case AV_CODEC_ID_ADPCM_IMA_QT:
     case AV_CODEC_ID_GSM:
@@ -378,6 +417,12 @@ static int aiff_read_packet(AVFormatContext *s,
     default:
         size = (MAX_SIZE / st->codec->block_align) * st->codec->block_align;
     }
+=======
+    if (st->codecpar->block_align >= 33) // GSM, QCLP, IMA4
+        size = st->codecpar->block_align;
+    else
+        size = (MAX_SIZE / st->codecpar->block_align) * st->codecpar->block_align;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     size = FFMIN(max_size, size);
     res = av_get_packet(s->pb, pkt, size);
     if (res < 0)
@@ -387,7 +432,7 @@ static int aiff_read_packet(AVFormatContext *s,
         pkt->flags &= ~AV_PKT_FLAG_CORRUPT;
     /* Only one stream in an AIFF file */
     pkt->stream_index = 0;
-    pkt->duration     = (res / st->codec->block_align) * aiff->block_duration;
+    pkt->duration     = (res / st->codecpar->block_align) * aiff->block_duration;
     return 0;
 }
 

@@ -126,6 +126,7 @@ static av_cold int fbdev_read_header(AVFormatContext *avctx)
         goto fail;
     }
 
+<<<<<<< HEAD:libavdevice/fbdev_dec.c
     st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codec->codec_id   = AV_CODEC_ID_RAWVIDEO;
     st->codec->width      = fbdev->width;
@@ -133,14 +134,27 @@ static av_cold int fbdev_read_header(AVFormatContext *avctx)
     st->codec->pix_fmt    = pix_fmt;
     st->codec->time_base  = av_inv_q(fbdev->framerate_q);
     st->codec->bit_rate   =
+=======
+    st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+    st->codecpar->codec_id   = AV_CODEC_ID_RAWVIDEO;
+    st->codecpar->width      = fbdev->width;
+    st->codecpar->height     = fbdev->height;
+    st->codecpar->format     = pix_fmt;
+    st->codecpar->bit_rate   =
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf:libavdevice/fbdev.c
         fbdev->width * fbdev->height * fbdev->bytes_per_pixel * av_q2d(fbdev->framerate_q) * 8;
+    st->avg_frame_rate  = fbdev->framerate_q;
 
     av_log(avctx, AV_LOG_INFO,
            "w:%d h:%d bpp:%d pixfmt:%s fps:%d/%d bit_rate:%"PRId64"\n",
            fbdev->width, fbdev->height, fbdev->varinfo.bits_per_pixel,
            av_get_pix_fmt_name(pix_fmt),
            fbdev->framerate_q.num, fbdev->framerate_q.den,
+<<<<<<< HEAD:libavdevice/fbdev_dec.c
            (int64_t)st->codec->bit_rate);
+=======
+           st->codecpar->bit_rate);
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf:libavdevice/fbdev.c
     return 0;
 
 fail:

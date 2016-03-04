@@ -165,13 +165,13 @@ static int mtv_read_header(AVFormatContext *s)
         return AVERROR(ENOMEM);
 
     avpriv_set_pts_info(st, 64, 1, mtv->video_fps);
-    st->codec->codec_type      = AVMEDIA_TYPE_VIDEO;
-    st->codec->codec_id        = AV_CODEC_ID_RAWVIDEO;
-    st->codec->pix_fmt         = AV_PIX_FMT_RGB565BE;
-    st->codec->width           = mtv->img_width;
-    st->codec->height          = mtv->img_height;
-    st->codec->extradata       = av_strdup("BottomUp");
-    st->codec->extradata_size  = 9;
+    st->codecpar->codec_type      = AVMEDIA_TYPE_VIDEO;
+    st->codecpar->codec_id        = AV_CODEC_ID_RAWVIDEO;
+    st->codecpar->format          = AV_PIX_FMT_RGB565BE;
+    st->codecpar->width           = mtv->img_width;
+    st->codecpar->height          = mtv->img_height;
+    st->codecpar->extradata       = av_strdup("BottomUp");
+    st->codecpar->extradata_size  = 9;
 
     // audio - mp3
 
@@ -179,11 +179,19 @@ static int mtv_read_header(AVFormatContext *s)
     if(!st)
         return AVERROR(ENOMEM);
 
+<<<<<<< HEAD
     avpriv_set_pts_info(st, 64, 1, MTV_AUDIO_SAMPLING_RATE);
     st->codec->codec_type      = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id        = AV_CODEC_ID_MP3;
     st->codec->bit_rate        = mtv->audio_br;
     st->need_parsing           = AVSTREAM_PARSE_FULL;
+=======
+    avpriv_set_pts_info(st, 64, 1, AUDIO_SAMPLING_RATE);
+    st->codecpar->codec_type      = AVMEDIA_TYPE_AUDIO;
+    st->codecpar->codec_id        = AV_CODEC_ID_MP3;
+    st->codecpar->bit_rate        = mtv->audio_br;
+    st->need_parsing              = AVSTREAM_PARSE_FULL;
+>>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     // Jump over header
 
