@@ -1881,18 +1881,11 @@ static int matroska_parse_tracks(AVFormatContext *s)
             ffio_init_context(&b, track->codec_priv.data,
                               track->codec_priv.size,
                               0, NULL, NULL, NULL, NULL);
-<<<<<<< HEAD
-            ret = ff_get_wav_header(s, &b, st->codec, track->codec_priv.size, 0);
-            if (ret < 0)
-                return ret;
-            codec_id         = st->codec->codec_id;
-            fourcc           = st->codec->codec_tag;
-=======
-            ret = ff_get_wav_header(s, &b, st->codecpar, track->codec_priv.size);
+            ret = ff_get_wav_header(s, &b, st->codecpar, track->codec_priv.size, 0);
             if (ret < 0)
                 return ret;
             codec_id         = st->codecpar->codec_id;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            fourcc           = st->codecpar->codec_tag;
             extradata_offset = FFMIN(track->codec_priv.size, 18);
         } else if (!strcmp(track->codec_id, "A_QUICKTIME")
                    /* Normally 36, but allow noncompliant private data */
@@ -2098,13 +2091,8 @@ static int matroska_parse_tracks(AVFormatContext *s)
                                           (AVRational){ 1, 1000000000 },
                                           st->time_base);
 
-<<<<<<< HEAD
-        st->codec->codec_id = codec_id;
-
-=======
         st->codecpar->codec_id = codec_id;
-        st->start_time      = 0;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+
         if (strcmp(track->language, "und"))
             av_dict_set(&st->metadata, "language", track->language, 0);
         av_dict_set(&st->metadata, "title", track->name, 0);
@@ -2119,18 +2107,9 @@ static int matroska_parse_tracks(AVFormatContext *s)
                 st->codecpar->extradata      = extradata;
                 st->codecpar->extradata_size = extradata_size;
             } else if (track->codec_priv.data && track->codec_priv.size > 0) {
-<<<<<<< HEAD
-                if (ff_alloc_extradata(st->codec, track->codec_priv.size))
+                if (ff_alloc_extradata(st->codecpar, track->codec_priv.size))
                     return AVERROR(ENOMEM);
-                memcpy(st->codec->extradata,
-=======
-                st->codecpar->extradata = av_mallocz(track->codec_priv.size +
-                                                     AV_INPUT_BUFFER_PADDING_SIZE);
-                if (!st->codecpar->extradata)
-                    return AVERROR(ENOMEM);
-                st->codecpar->extradata_size = track->codec_priv.size;
                 memcpy(st->codecpar->extradata,
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                        track->codec_priv.data + extradata_offset,
                        track->codec_priv.size);
             }
@@ -2141,19 +2120,12 @@ static int matroska_parse_tracks(AVFormatContext *s)
             int display_width_mul  = 1;
             int display_height_mul = 1;
 
-<<<<<<< HEAD
-            st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-            st->codec->codec_tag  = fourcc;
-            if (bit_depth >= 0)
-                st->codec->bits_per_coded_sample = bit_depth;
-            st->codec->width      = track->video.pixel_width;
-            st->codec->height     = track->video.pixel_height;
-=======
             st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
-            st->codecpar->codec_tag  = track->video.fourcc;
+            st->codecpar->codec_tag  = fourcc;
+            if (bit_depth >= 0)
+                st->codecpar->bits_per_coded_sample = bit_depth;
             st->codecpar->width      = track->video.pixel_width;
             st->codecpar->height     = track->video.pixel_height;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
             if (track->video.stereo_mode && track->video.stereo_mode < MATROSKA_VIDEO_STEREOMODE_TYPE_NB)
                 mkv_stereo_mode_display_mul(track->video.stereo_mode, &display_width_mul, &display_height_mul);
@@ -2163,12 +2135,7 @@ static int matroska_parse_tracks(AVFormatContext *s)
                       st->codecpar->height * track->video.display_width  * display_width_mul,
                       st->codecpar->width  * track->video.display_height * display_height_mul,
                       255);
-<<<<<<< HEAD
-            if (st->codec->codec_id != AV_CODEC_ID_HEVC)
-=======
-            if (st->codecpar->codec_id != AV_CODEC_ID_H264 &&
-                st->codecpar->codec_id != AV_CODEC_ID_HEVC)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            if (st->codecpar->codec_id != AV_CODEC_ID_HEVC)
                 st->need_parsing = AVSTREAM_PARSE_HEADERS;
 
             if (track->default_duration) {
@@ -2211,38 +2178,28 @@ static int matroska_parse_tracks(AVFormatContext *s)
                     return ret;
             }
         } else if (track->type == MATROSKA_TRACK_TYPE_AUDIO) {
-<<<<<<< HEAD
-            st->codec->codec_type  = AVMEDIA_TYPE_AUDIO;
-            st->codec->codec_tag   = fourcc;
-            st->codec->sample_rate = track->audio.out_samplerate;
-            st->codec->channels    = track->audio.channels;
-            if (!st->codec->bits_per_coded_sample)
-                st->codec->bits_per_coded_sample = track->audio.bitdepth;
-            if (st->codec->codec_id == AV_CODEC_ID_MP3)
-=======
             st->codecpar->codec_type  = AVMEDIA_TYPE_AUDIO;
+            st->codecpar->codec_tag   = fourcc;
             st->codecpar->sample_rate = track->audio.out_samplerate;
             st->codecpar->channels    = track->audio.channels;
-            if (st->codecpar->codec_id != AV_CODEC_ID_AAC)
-                st->need_parsing = AVSTREAM_PARSE_HEADERS;
+            if (!st->codecpar->bits_per_coded_sample)
+                st->codecpar->bits_per_coded_sample = track->audio.bitdepth;
             if (st->codecpar->codec_id == AV_CODEC_ID_MP3)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                 st->need_parsing = AVSTREAM_PARSE_FULL;
-            else if (st->codec->codec_id != AV_CODEC_ID_AAC)
+            else if (st->codecpar->codec_id != AV_CODEC_ID_AAC)
                 st->need_parsing = AVSTREAM_PARSE_HEADERS;
             if (track->codec_delay > 0) {
-                st->codec->delay = av_rescale_q(track->codec_delay,
-                                                st->time_base,
-                                                (AVRational){1, st->codec->sample_rate});
+                st->codecpar->initial_padding = av_rescale_q(track->codec_delay,
+                                                             st->time_base,
+                                                             (AVRational){1, st->codecpar->sample_rate});
             }
             if (track->seek_preroll > 0) {
-                av_codec_set_seek_preroll(st->codec,
-                                          av_rescale_q(track->seek_preroll,
-                                                       (AVRational){1, 1000000000},
-                                                       (AVRational){1, st->codec->sample_rate}));
+                st->codecpar->seek_preroll = av_rescale_q(track->seek_preroll,
+                                                          (AVRational){1, 1000000000},
+                                                          (AVRational){1, st->codecpar->sample_rate});
             }
         } else if (codec_id == AV_CODEC_ID_WEBVTT) {
-            st->codec->codec_type = AVMEDIA_TYPE_SUBTITLE;
+            st->codecpar->codec_type = AVMEDIA_TYPE_SUBTITLE;
 
             if (!strcmp(track->codec_id, "D_WEBVTT/CAPTIONS")) {
                 st->disposition |= AV_DISPOSITION_CAPTIONS;
@@ -2252,13 +2209,8 @@ static int matroska_parse_tracks(AVFormatContext *s)
                 st->disposition |= AV_DISPOSITION_METADATA;
             }
         } else if (track->type == MATROSKA_TRACK_TYPE_SUBTITLE) {
-<<<<<<< HEAD
-            st->codec->codec_type = AVMEDIA_TYPE_SUBTITLE;
-            if (st->codec->codec_id == AV_CODEC_ID_ASS)
-=======
             st->codecpar->codec_type = AVMEDIA_TYPE_SUBTITLE;
-            if (st->codecpar->codec_id == AV_CODEC_ID_SSA)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            if (st->codecpar->codec_id == AV_CODEC_ID_ASS)
                 matroska->contains_ssa = 1;
         }
     }
@@ -2377,20 +2329,10 @@ static int matroska_read_header(AVFormatContext *s)
                 st->attached_pic.stream_index = st->index;
                 st->attached_pic.flags       |= AV_PKT_FLAG_KEY;
             } else {
-<<<<<<< HEAD
-                st->codec->codec_type = AVMEDIA_TYPE_ATTACHMENT;
-                if (ff_alloc_extradata(st->codec, attachments[j].bin.size))
-                    break;
-                memcpy(st->codec->extradata, attachments[j].bin.data,
-=======
                 st->codecpar->codec_type = AVMEDIA_TYPE_ATTACHMENT;
-                st->codecpar->extradata  = av_malloc(attachments[j].bin.size);
-                if (!st->codecpar->extradata)
+                if (ff_alloc_extradata(st->codecpar, attachments[j].bin.size))
                     break;
-
-                st->codecpar->extradata_size = attachments[j].bin.size;
                 memcpy(st->codecpar->extradata, attachments[j].bin.data,
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                        attachments[j].bin.size);
 
                 for (i = 0; ff_mkv_mime_tags[i].id != AV_CODEC_ID_NONE; i++) {
@@ -2900,12 +2842,8 @@ static int matroska_parse_frame(MatroskaDemuxContext *matroska,
         pkt_data = wv_data;
     }
 
-<<<<<<< HEAD
-    if (st->codec->codec_id == AV_CODEC_ID_PRORES &&
+    if (st->codecpar->codec_id == AV_CODEC_ID_PRORES &&
         AV_RB32(&data[4]) != MKBETAG('i', 'c', 'p', 'f'))
-=======
-    if (st->codecpar->codec_id == AV_CODEC_ID_PRORES)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         offset = 8;
 
     pkt = av_mallocz(sizeof(AVPacket));
@@ -2921,11 +2859,7 @@ static int matroska_parse_frame(MatroskaDemuxContext *matroska,
         goto fail;
     }
 
-<<<<<<< HEAD
-    if (st->codec->codec_id == AV_CODEC_ID_PRORES && offset == 8) {
-=======
-    if (st->codecpar->codec_id == AV_CODEC_ID_PRORES) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    if (st->codecpar->codec_id == AV_CODEC_ID_PRORES && offset == 8) {
         uint8_t *buf = pkt->data;
         bytestream_put_be32(&buf, pkt_size);
         bytestream_put_be32(&buf, MKBETAG('i', 'c', 'p', 'f'));
@@ -2964,7 +2898,7 @@ static int matroska_parse_frame(MatroskaDemuxContext *matroska,
         AV_WL32(side_data, 0);
         AV_WL32(side_data + 4, av_rescale_q(discard_padding,
                                             (AVRational){1, 1000000000},
-                                            (AVRational){1, st->codec->sample_rate}));
+                                            (AVRational){1, st->codecpar->sample_rate}));
     }
 
     if (track->ms_compat)
@@ -2972,12 +2906,11 @@ static int matroska_parse_frame(MatroskaDemuxContext *matroska,
     else
         pkt->pts = timecode;
     pkt->pos = pos;
-<<<<<<< HEAD
     pkt->duration = lace_duration;
 
 #if FF_API_CONVERGENCE_DURATION
 FF_DISABLE_DEPRECATION_WARNINGS
-    if (st->codec->codec_id == AV_CODEC_ID_SUBRIP) {
+    if (st->codecpar->codec_id == AV_CODEC_ID_SUBRIP) {
         pkt->convergence_duration = lace_duration;
     }
 FF_ENABLE_DEPRECATION_WARNINGS
@@ -2985,30 +2918,6 @@ FF_ENABLE_DEPRECATION_WARNINGS
 
     dynarray_add(&matroska->packets, &matroska->num_packets, pkt);
     matroska->prev_pkt = pkt;
-=======
-    if (track->type != MATROSKA_TRACK_TYPE_SUBTITLE || st->codecpar->codec_id == AV_CODEC_ID_TEXT)
-        pkt->duration = duration;
-#if FF_API_CONVERGENCE_DURATION
-FF_DISABLE_DEPRECATION_WARNINGS
-    if (st->codecpar->codec_id == AV_CODEC_ID_TEXT)
-        pkt->convergence_duration = duration;
-FF_ENABLE_DEPRECATION_WARNINGS
-#endif
-
-    if (st->codecpar->codec_id == AV_CODEC_ID_SSA)
-        matroska_fix_ass_packet(matroska, pkt, duration);
-
-    if (matroska->prev_pkt                                 &&
-        timecode                         != AV_NOPTS_VALUE &&
-        matroska->prev_pkt->pts          == timecode       &&
-        matroska->prev_pkt->stream_index == st->index      &&
-        st->codecpar->codec_id == AV_CODEC_ID_SSA)
-        matroska_merge_packets(matroska->prev_pkt, pkt);
-    else {
-        dynarray_add(&matroska->packets, &matroska->num_packets, pkt);
-        matroska->prev_pkt = pkt;
-    }
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     return 0;
 
@@ -3091,8 +3000,8 @@ static int matroska_parse_block(MatroskaDemuxContext *matroska, uint8_t *data,
 
     if (track->audio.samplerate == 8000) {
         // If this is needed for more codecs, then add them here
-        if (st->codec->codec_id == AV_CODEC_ID_AC3) {
-            if (track->audio.samplerate != st->codec->sample_rate || !st->codec->frame_size)
+        if (st->codecpar->codec_id == AV_CODEC_ID_AC3) {
+            if (track->audio.samplerate != st->codecpar->sample_rate)
                 trust_default_duration = 0;
         }
     }
@@ -3105,7 +3014,6 @@ static int matroska_parse_block(MatroskaDemuxContext *matroska, uint8_t *data,
             FFMAX(track->end_timecode, timecode + block_duration);
 
     for (n = 0; n < laces; n++) {
-<<<<<<< HEAD
         int64_t lace_duration = block_duration*(n+1) / laces - block_duration*n / laces;
 
         if (lace_size[n] > size) {
@@ -3113,25 +3021,18 @@ static int matroska_parse_block(MatroskaDemuxContext *matroska, uint8_t *data,
             break;
         }
 
-        if ((st->codec->codec_id == AV_CODEC_ID_RA_288 ||
-             st->codec->codec_id == AV_CODEC_ID_COOK   ||
-             st->codec->codec_id == AV_CODEC_ID_SIPR   ||
-             st->codec->codec_id == AV_CODEC_ID_ATRAC3) &&
-            st->codec->block_align && track->audio.sub_packet_size) {
-=======
         if ((st->codecpar->codec_id == AV_CODEC_ID_RA_288 ||
              st->codecpar->codec_id == AV_CODEC_ID_COOK   ||
              st->codecpar->codec_id == AV_CODEC_ID_SIPR   ||
              st->codecpar->codec_id == AV_CODEC_ID_ATRAC3) &&
             st->codecpar->block_align && track->audio.sub_packet_size) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             res = matroska_parse_rm_audio(matroska, track, st, data,
                                           lace_size[n],
                                           timecode, pos);
             if (res)
                 goto end;
 
-        } else if (st->codec->codec_id == AV_CODEC_ID_WEBVTT) {
+        } else if (st->codecpar->codec_id == AV_CODEC_ID_WEBVTT) {
             res = matroska_parse_webvtt(matroska, track, st,
                                         data, lace_size[n],
                                         timecode, lace_duration,
