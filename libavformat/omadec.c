@@ -369,19 +369,10 @@ static int oma_read_header(AVFormatContext *s)
 
         /* fake the ATRAC3 extradata
          * (wav format, makes stream copy to wav work) */
-<<<<<<< HEAD
-        if (ff_alloc_extradata(st->codec, 14))
+        if (ff_alloc_extradata(st->codecpar, 14))
             return AVERROR(ENOMEM);
 
-        edata = st->codec->extradata;
-=======
-        st->codecpar->extradata_size = 14;
-        edata = av_mallocz(14 + AV_INPUT_BUFFER_PADDING_SIZE);
-        if (!edata)
-            return AVERROR(ENOMEM);
-
-        st->codecpar->extradata = edata;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        edata = st->codecpar->extradata;
         AV_WL16(&edata[0],  1);             // always 1
         AV_WL32(&edata[2],  samplerate);    // samples rate
         AV_WL16(&edata[6],  jsflag);        // coding mode
