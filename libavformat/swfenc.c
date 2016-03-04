@@ -191,17 +191,8 @@ static int swf_write_header(AVFormatContext *s)
                 av_log(s, AV_LOG_ERROR, "SWF muxer only supports 1 audio stream\n");
                 return AVERROR_INVALIDDATA;
             }
-<<<<<<< HEAD
-            if (enc->codec_id == AV_CODEC_ID_MP3) {
-                if (!enc->frame_size) {
-                    av_log(s, AV_LOG_ERROR, "audio frame size not set\n");
-                    return -1;
-                }
-                swf->audio_enc = enc;
-=======
             if (par->codec_id == AV_CODEC_ID_MP3) {
                 swf->audio_par = par;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                 swf->audio_fifo= av_fifo_alloc(AUDIO_FIFO_SIZE);
                 if (!swf->audio_fifo)
                     return AVERROR(ENOMEM);
@@ -240,13 +231,8 @@ static int swf_write_header(AVFormatContext *s)
         rate_base = swf->video_st->time_base.num;
     }
 
-<<<<<<< HEAD
-    if (!swf->audio_enc)
-        swf->samples_per_frame = (44100LL * rate_base) / rate;
-=======
     if (!swf->audio_par)
-        swf->samples_per_frame = (44100.0 * rate_base) / rate;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        swf->samples_per_frame = (44100LL * rate_base) / rate;
     else
         swf->samples_per_frame = (swf->audio_par->sample_rate * rate_base) / rate;
 
@@ -475,11 +461,7 @@ static int swf_write_audio(AVFormatContext *s,
     }
 
     av_fifo_generic_write(swf->audio_fifo, buf, size, NULL);
-<<<<<<< HEAD
-    swf->sound_samples += enc->frame_size;
-=======
     swf->sound_samples += av_get_audio_frame_duration2(par, size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     /* if audio only stream make sure we add swf frames */
     if (!swf->video_par)
@@ -506,20 +488,12 @@ static int swf_write_trailer(AVFormatContext *s)
 
     video_par = NULL;
     for(i=0;i<s->nb_streams;i++) {
-<<<<<<< HEAD
-        enc = s->streams[i]->codec;
-        if (enc->codec_type == AVMEDIA_TYPE_VIDEO)
-            video_enc = enc;
-        else {
-            av_fifo_freep(&swf->audio_fifo);
-        }
-=======
         par = s->streams[i]->codecpar;
         if (par->codec_type == AVMEDIA_TYPE_VIDEO)
             video_par = par;
-        else
-            av_fifo_free(swf->audio_fifo);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        else {
+            av_fifo_freep(&swf->audio_fifo);
+        }
     }
 
     put_swf_tag(s, TAG_END);
