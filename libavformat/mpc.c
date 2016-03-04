@@ -89,30 +89,16 @@ static int mpc_read_header(AVFormatContext *s)
     st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
-<<<<<<< HEAD
-    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_id = AV_CODEC_ID_MUSEPACK7;
-    st->codec->channels = 2;
-    st->codec->channel_layout = AV_CH_LAYOUT_STEREO;
-    st->codec->bits_per_coded_sample = 16;
-
-    if (ff_get_extradata(st->codec, s->pb, 16) < 0)
-        return AVERROR(ENOMEM);
-    st->codec->sample_rate = mpc_rate[st->codec->extradata[2] & 3];
-    avpriv_set_pts_info(st, 32, MPC_FRAMESIZE, st->codec->sample_rate);
-=======
     st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codecpar->codec_id = AV_CODEC_ID_MUSEPACK7;
     st->codecpar->channels = 2;
     st->codecpar->channel_layout = AV_CH_LAYOUT_STEREO;
     st->codecpar->bits_per_coded_sample = 16;
 
-    st->codecpar->extradata_size = 16;
-    st->codecpar->extradata = av_mallocz(st->codecpar->extradata_size+AV_INPUT_BUFFER_PADDING_SIZE);
-    avio_read(s->pb, st->codecpar->extradata, 16);
+    if (ff_get_extradata(st->codecpar, s->pb, 16) < 0)
+        return AVERROR(ENOMEM);
     st->codecpar->sample_rate = mpc_rate[st->codecpar->extradata[2] & 3];
     avpriv_set_pts_info(st, 32, MPC_FRAMESIZE, st->codecpar->sample_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     /* scan for seekpoints */
     st->start_time = 0;
     st->duration = c->fcount;
