@@ -203,11 +203,7 @@ static char *extradata2psets(AVFormatContext *s, AVCodecParameters *par)
             sps_end = r1;
         }
         if (!av_base64_encode(p, MAX_PSET_SIZE - (p - psets), r, r1 - r)) {
-<<<<<<< HEAD
-            av_log(c, AV_LOG_ERROR, "Cannot Base64-encode %"PTRDIFF_SPECIFIER" %"PTRDIFF_SPECIFIER"!\n", MAX_PSET_SIZE - (p - psets), r1 - r);
-=======
-            av_log(s, AV_LOG_ERROR, "Cannot Base64-encode %td %td!\n", MAX_PSET_SIZE - (p - psets), r1 - r);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            av_log(s, AV_LOG_ERROR, "Cannot Base64-encode %"PTRDIFF_SPECIFIER" %"PTRDIFF_SPECIFIER"!\n", MAX_PSET_SIZE - (p - psets), r1 - r);
             av_free(psets);
             av_free(tmpbuf);
 
@@ -483,9 +479,10 @@ static char *latm_context2config(AVFormatContext *s, AVCodecParameters *par)
     return config;
 }
 
-static char *sdp_write_media_attributes(char *buff, int size, AVCodecParameters *p, int payload_type, AVFormatContext *fmt)
+static char *sdp_write_media_attributes(char *buff, int size, AVStream *st, int payload_type, AVFormatContext *fmt)
 {
     char *config = NULL;
+    AVCodecParameters *p = st->codecpar;
 
     switch (p->codec_id) {
         case AV_CODEC_ID_H264: {
@@ -684,15 +681,14 @@ static char *sdp_write_media_attributes(char *buff, int size, AVCodecParameters 
             break;
         case AV_CODEC_ID_SPEEX:
             av_strlcatf(buff, size, "a=rtpmap:%d speex/%d\r\n",
-<<<<<<< HEAD
-                                     payload_type, c->sample_rate);
-            if (c->codec) {
+                                     payload_type, p->sample_rate);
+            if (st->codec) {
                 const char *mode;
                 uint64_t vad_option;
 
-                if (c->flags & AV_CODEC_FLAG_QSCALE)
+                if (st->codec->flags & AV_CODEC_FLAG_QSCALE)
                       mode = "on";
-                else if (!av_opt_get_int(c, "vad", AV_OPT_FLAG_ENCODING_PARAM, &vad_option) && vad_option)
+                else if (!av_opt_get_int(st->codec, "vad", AV_OPT_FLAG_ENCODING_PARAM, &vad_option) && vad_option)
                       mode = "vad";
                 else
                       mode = "off";
@@ -700,9 +696,6 @@ static char *sdp_write_media_attributes(char *buff, int size, AVCodecParameters 
                 av_strlcatf(buff, size, "a=fmtp:%d vbr=%s\r\n",
                                         payload_type, mode);
             }
-=======
-                                     payload_type, p->sample_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             break;
         case AV_CODEC_ID_OPUS:
             /* The opus RTP draft says that all opus streams MUST be declared
@@ -713,13 +706,8 @@ static char *sdp_write_media_attributes(char *buff, int size, AVCodecParameters 
                receivers MUST be able to receive and process stereo packets. */
             av_strlcatf(buff, size, "a=rtpmap:%d opus/48000/2\r\n",
                                      payload_type);
-<<<<<<< HEAD
-            if (c->channels == 2) {
-                av_strlcatf(buff, size, "a=fmtp:%d sprop-stereo=1\r\n",
-=======
             if (p->channels == 2) {
-                av_strlcatf(buff, size, "a=fmtp:%d sprop-stereo:1\r\n",
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                av_strlcatf(buff, size, "a=fmtp:%d sprop-stereo=1\r\n",
                                          payload_type);
             }
             break;
@@ -752,16 +740,11 @@ void ff_sdp_write_media(char *buff, int size, AVStream *st, int idx,
 
     av_strlcatf(buff, size, "m=%s %d RTP/AVP %d\r\n", type, port, payload_type);
     sdp_write_address(buff, size, dest_addr, dest_type, ttl);
-<<<<<<< HEAD
-    if (c->bit_rate) {
-        av_strlcatf(buff, size, "b=AS:%"PRId64"\r\n", (int64_t)c->bit_rate / 1000);
-=======
     if (p->bit_rate) {
-        av_strlcatf(buff, size, "b=AS:%d\r\n", p->bit_rate / 1000);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        av_strlcatf(buff, size, "b=AS:%"PRId64"\r\n", (int64_t)p->bit_rate / 1000);
     }
 
-    sdp_write_media_attributes(buff, size, p, payload_type, fmt);
+    sdp_write_media_attributes(buff, size, st, payload_type, fmt);
 }
 
 int av_sdp_create(AVFormatContext *ac[], int n_files, char *buf, int size)
