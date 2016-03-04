@@ -87,23 +87,14 @@ static void get_str8(AVIOContext *pb, char *buf, int buf_size)
     get_strl(pb, buf, buf_size, avio_r8(pb));
 }
 
-static int rm_read_extradata(AVIOContext *pb, AVCodecParameters *par, unsigned size)
+static int rm_read_extradata(AVFormatContext *s, AVIOContext *pb, AVCodecParameters *par, unsigned size)
 {
     if (size >= 1<<24) {
-        av_log(avctx, AV_LOG_ERROR, "extradata size %u too large\n", size);
+        av_log(s, AV_LOG_ERROR, "extradata size %u too large\n", size);
         return -1;
-<<<<<<< HEAD
     }
-    if (ff_get_extradata(avctx, pb, size) < 0)
+    if (ff_get_extradata(par, pb, size) < 0)
         return AVERROR(ENOMEM);
-=======
-    par->extradata = av_mallocz(size + AV_INPUT_BUFFER_PADDING_SIZE);
-    if (!par->extradata)
-        return AVERROR(ENOMEM);
-    par->extradata_size = avio_read(pb, par->extradata, size);
-    if (par->extradata_size != size)
-        return AVERROR(EIO);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     return 0;
 }
 
@@ -158,21 +149,13 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
         // Skip extra header crap (this should never happen)
         if ((startpos + header_size) > avio_tell(pb))
             avio_skip(pb, header_size + startpos - avio_tell(pb));
-<<<<<<< HEAD
         if (bytes_per_minute)
-            st->codec->bit_rate = 8LL * bytes_per_minute / 60;
-        st->codec->sample_rate = 8000;
-        st->codec->channels = 1;
-        st->codec->channel_layout = AV_CH_LAYOUT_MONO;
-        st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-        st->codec->codec_id = AV_CODEC_ID_RA_144;
-=======
+            st->codecpar->bit_rate = 8LL * bytes_per_minute / 60;
         st->codecpar->sample_rate = 8000;
         st->codecpar->channels = 1;
         st->codecpar->channel_layout = AV_CH_LAYOUT_MONO;
         st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
         st->codecpar->codec_id = AV_CODEC_ID_RA_144;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         ast->deint_id = DEINT_ID_INT0;
     } else {
         int flavor, sub_packet_h, coded_framesize, sub_packet_size;
@@ -190,7 +173,7 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
         bytes_per_minute = avio_rb32(pb);
         if (version == 4) {
             if (bytes_per_minute)
-                st->codec->bit_rate = 8LL * bytes_per_minute / 60;
+                st->codecpar->bit_rate = 8LL * bytes_per_minute / 60;
         }
         avio_rb32(pb); /* ??? */
         ast->sub_packet_h = sub_packet_h = avio_rb16(pb); /* 1 */
@@ -259,7 +242,7 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
                 }
                 st->codecpar->block_align = ast->sub_packet_size;
             }
-            if ((ret = rm_read_extradata(pb, st->codecpar, codecdata_length)) < 0)
+            if ((ret = rm_read_extradata(s, pb, st->codecpar, codecdata_length)) < 0)
                 return ret;
 
             break;
@@ -274,24 +257,11 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
             }
             if (codecdata_length >= 1) {
                 avio_r8(pb);
-                if ((ret = rm_read_extradata(pb, st->codecpar, codecdata_length - 1)) < 0)
+                if ((ret = rm_read_extradata(s, pb, st->codecpar, codecdata_length - 1)) < 0)
                     return ret;
             }
             break;
         }
-<<<<<<< HEAD
-=======
-        if (ast->deint_id == DEINT_ID_INT4 ||
-            ast->deint_id == DEINT_ID_GENR ||
-            ast->deint_id == DEINT_ID_SIPR) {
-            if (st->codecpar->block_align <= 0 ||
-                ast->audio_framesize * sub_packet_h > (unsigned)INT_MAX ||
-                ast->audio_framesize * sub_packet_h < st->codecpar->block_align)
-                return AVERROR_INVALIDDATA;
-            if (av_new_packet(&ast->pkt, ast->audio_framesize * sub_packet_h) < 0)
-                return AVERROR(ENOMEM);
-        }
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         switch (ast->deint_id) {
         case DEINT_ID_INT4:
             if (ast->coded_framesize > ast->audio_framesize ||
@@ -322,9 +292,9 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
         if (ast->deint_id == DEINT_ID_INT4 ||
             ast->deint_id == DEINT_ID_GENR ||
             ast->deint_id == DEINT_ID_SIPR) {
-            if (st->codec->block_align <= 0 ||
+            if (st->codecpar->block_align <= 0 ||
                 ast->audio_framesize * sub_packet_h > (unsigned)INT_MAX ||
-                ast->audio_framesize * sub_packet_h < st->codec->block_align)
+                ast->audio_framesize * sub_packet_h < st->codecpar->block_align)
                 return AVERROR_INVALIDDATA;
             if (av_new_packet(&ast->pkt, ast->audio_framesize * sub_packet_h) < 0)
                 return AVERROR(ENOMEM);
@@ -364,14 +334,13 @@ int ff_rm_read_mdpr_codecdata(AVFormatContext *s, AVIOContext *pb,
             return -1;
     } else if (v == MKBETAG('L', 'S', 'D', ':')) {
         avio_seek(pb, -4, SEEK_CUR);
-        if ((ret = rm_read_extradata(pb, st->codecpar, codec_data_size)) < 0)
+        if ((ret = rm_read_extradata(s, pb, st->codecpar, codec_data_size)) < 0)
             return ret;
 
-<<<<<<< HEAD
-        st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-        st->codec->codec_tag  = AV_RL32(st->codec->extradata);
-        st->codec->codec_id   = ff_codec_get_id(ff_rm_codec_tags,
-                                                st->codec->codec_tag);
+        st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+        st->codecpar->codec_tag  = AV_RL32(st->codecpar->extradata);
+        st->codecpar->codec_id   = ff_codec_get_id(ff_rm_codec_tags,
+                                                st->codecpar->codec_tag);
     } else if(mime && !strcmp(mime, "logical-fileinfo")){
         int stream_count, rule_count, property_count, i;
         ff_free_stream(s, st);
@@ -399,12 +368,6 @@ int ff_rm_read_mdpr_codecdata(AVFormatContext *s, AVIOContext *pb,
             default: avio_skip(pb, avio_rb16(pb));
             }
         }
-=======
-        st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
-        st->codecpar->codec_tag  = AV_RL32(st->codecpar->extradata);
-        st->codecpar->codec_id   = ff_codec_get_id(ff_rm_codec_tags,
-                                                   st->codecpar->codec_tag);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     } else {
         int fps;
         if (avio_rl32(pb) != MKTAG('V', 'I', 'D', 'O')) {
@@ -426,7 +389,7 @@ int ff_rm_read_mdpr_codecdata(AVFormatContext *s, AVIOContext *pb,
         st->need_parsing = AVSTREAM_PARSE_TIMESTAMPS;
         fps = avio_rb32(pb);
 
-        if ((ret = rm_read_extradata(pb, st->codecpar, codec_data_size - (avio_tell(pb) - codec_pos))) < 0)
+        if ((ret = rm_read_extradata(s, pb, st->codecpar, codec_data_size - (avio_tell(pb) - codec_pos))) < 0)
             return ret;
 
         if (fps > 0) {
@@ -548,10 +511,10 @@ static int rm_read_multi(AVFormatContext *s, AVIOContext *pb,
                 return ret;
             }
             st2->id = st->id + (i<<16);
-            st2->codec->bit_rate = st->codec->bit_rate;
+            st2->codecpar->bit_rate = st->codecpar->bit_rate;
             st2->start_time = st->start_time;
             st2->duration   = st->duration;
-            st2->codec->codec_type = AVMEDIA_TYPE_DATA;
+            st2->codecpar->codec_type = AVMEDIA_TYPE_DATA;
             st2->priv_data = ff_rm_alloc_rmstream();
             if (!st2->priv_data)
                 return AVERROR(ENOMEM);
@@ -646,13 +609,8 @@ static int rm_read_header(AVFormatContext *s)
             if(duration>0)
                 s->duration = AV_NOPTS_VALUE;
             get_str8(pb, buf, sizeof(buf)); /* desc */
-<<<<<<< HEAD
             get_str8(pb, mime, sizeof(mime)); /* mimetype */
-            st->codec->codec_type = AVMEDIA_TYPE_DATA;
-=======
-            get_str8(pb, buf, sizeof(buf)); /* mimetype */
             st->codecpar->codec_type = AVMEDIA_TYPE_DATA;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             st->priv_data = ff_rm_alloc_rmstream();
             if (!st->priv_data)
                 return AVERROR(ENOMEM);
@@ -935,16 +893,10 @@ ff_rm_parse_packet (AVFormatContext *s, AVIOContext *pb,
 
     if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
         rm->current_stream= st->id;
-<<<<<<< HEAD
         ret = rm_assemble_video_frame(s, pb, rm, ast, pkt, len, seq, &timestamp);
         if(ret)
             return ret < 0 ? ret : -1; //got partial frame or error
-    } else if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-=======
-        if(rm_assemble_video_frame(s, pb, rm, ast, pkt, len, seq, &timestamp))
-            return -1; //got partial frame
     } else if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         if ((ast->deint_id == DEINT_ID_GENR) ||
             (ast->deint_id == DEINT_ID_INT4) ||
             (ast->deint_id == DEINT_ID_SIPR)) {
@@ -1035,19 +987,12 @@ ff_rm_retrieve_cache (AVFormatContext *s, AVIOContext *pb,
     av_assert0 (rm->audio_pkt_cnt > 0);
 
     if (ast->deint_id == DEINT_ID_VBRF ||
-<<<<<<< HEAD
         ast->deint_id == DEINT_ID_VBRS) {
         int ret = av_get_packet(pb, pkt, ast->sub_packet_lengths[ast->sub_packet_cnt - rm->audio_pkt_cnt]);
         if (ret < 0)
             return ret;
     } else {
-        int ret = av_new_packet(pkt, st->codec->block_align);
-=======
-        ast->deint_id == DEINT_ID_VBRS)
-        av_get_packet(pb, pkt, ast->sub_packet_lengths[ast->sub_packet_cnt - rm->audio_pkt_cnt]);
-    else {
         int ret = av_new_packet(pkt, st->codecpar->block_align);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         if (ret < 0)
             return ret;
         memcpy(pkt->data, ast->pkt.data + st->codecpar->block_align * //FIXME avoid this
