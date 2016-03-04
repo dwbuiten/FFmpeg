@@ -3895,6 +3895,10 @@ typedef struct AVCodecParameters {
      * Number of samples to skip after a discontinuity
      */
     int seek_preroll;
+    /**
+     * Type of service that the audio stream conveys.
+     */
+    enum AVAudioServiceType audio_service_type;
 } AVCodecParameters;
 
 /**
