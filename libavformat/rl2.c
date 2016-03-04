@@ -127,21 +127,9 @@ static av_cold int rl2_read_header(AVFormatContext *s)
     if(signature == RLV3_TAG && back_size > 0)
         st->codecpar->extradata_size += back_size;
 
-<<<<<<< HEAD
-    if(ff_get_extradata(st->codec, pb, st->codec->extradata_size) < 0)
+    if(ff_get_extradata(st->codecpar, pb, st->codecpar->extradata_size) < 0)
         return AVERROR(ENOMEM);
 
-=======
-    st->codecpar->extradata = av_mallocz(st->codecpar->extradata_size +
-                                         AV_INPUT_BUFFER_PADDING_SIZE);
-    if(!st->codecpar->extradata)
-        return AVERROR(ENOMEM);
-
-    if(avio_read(pb,st->codecpar->extradata,st->codecpar->extradata_size) !=
-       st->codecpar->extradata_size)
-        return AVERROR(EIO);
-
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     /** setup audio stream if present */
     if(sound_rate){
         if (!channels || channels > 42) {
