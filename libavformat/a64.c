@@ -40,11 +40,7 @@ static int a64_write_header(AVFormatContext *s)
         return AVERROR_INVALIDDATA;
     }
 
-<<<<<<< HEAD
-    switch (avctx->codec_id) {
-=======
     switch (par->codec_id) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     case AV_CODEC_ID_A64_MULTI:
         header[2] = 0x00;
         header[3] = AV_RB32(par->extradata+0);
