@@ -71,13 +71,9 @@ typedef struct FLVContext {
     AVCodecParameters *audio_par;
     AVCodecParameters *video_par;
     double framerate;
-<<<<<<< HEAD
-    AVCodecContext *data_enc;
+    AVCodecParameters *data_par;
 
     int flags;
-=======
-    AVCodecParameters *data_par;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 } FLVContext;
 
 typedef struct FLVStreamContext {
@@ -98,15 +94,9 @@ static int get_audio_flags(AVFormatContext *s, AVCodecParameters *par)
                    "FLV only supports wideband (16kHz) Speex audio\n");
             return AVERROR(EINVAL);
         }
-<<<<<<< HEAD
-        if (enc->channels != 1) {
+        if (par->channels != 1) {
             av_log(s, AV_LOG_ERROR, "FLV only supports mono Speex audio\n");
             return AVERROR(EINVAL);
-=======
-        if (par->channels != 1) {
-            av_log(s, AV_LOG_ERROR, "flv only supports mono Speex audio\n");
-            return -1;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         }
         return FLV_CODECID_SPEEX | FLV_SAMPLERATE_11025HZ | FLV_SAMPLESSIZE_16BIT;
     } else {
@@ -130,7 +120,7 @@ static int get_audio_flags(AVFormatContext *s, AVCodecParameters *par)
         default:
             av_log(s, AV_LOG_ERROR,
                    "FLV does not support sample rate %d, "
-                   "choose from (44100, 22050, 11025)\n", enc->sample_rate);
+                   "choose from (44100, 22050, 11025)\n", par->sample_rate);
             return AVERROR(EINVAL);
         }
     }
@@ -173,7 +163,7 @@ static int get_audio_flags(AVFormatContext *s, AVCodecParameters *par)
         break;
     default:
         av_log(s, AV_LOG_ERROR, "Audio codec '%s' not compatible with FLV\n",
-               avcodec_get_name(enc->codec_id));
+               avcodec_get_name(par->codec_id));
         return AVERROR(EINVAL);
     }
 
@@ -374,31 +364,25 @@ static int flv_write_header(AVFormatContext *s)
                        "at most one video stream is supported in flv\n");
                 return AVERROR(EINVAL);
             }
-<<<<<<< HEAD
-            flv->video_enc = enc;
-            if (!ff_codec_get_tag(flv_video_codec_ids, enc->codec_id))
-                return unsupported_codec(s, "Video", enc->codec_id);
+            flv->video_par = par;
+            if (!ff_codec_get_tag(flv_video_codec_ids, par->codec_id))
+                return unsupported_codec(s, "Video", par->codec_id);
 
-            if (enc->codec_id == AV_CODEC_ID_MPEG4 ||
-                enc->codec_id == AV_CODEC_ID_H263) {
+            if (par->codec_id == AV_CODEC_ID_MPEG4 ||
+                par->codec_id == AV_CODEC_ID_H263) {
                 int error = s->strict_std_compliance > FF_COMPLIANCE_UNOFFICIAL;
                 av_log(s, error ? AV_LOG_ERROR : AV_LOG_WARNING,
-                       "Codec %s is not supported in the official FLV specification,\n", avcodec_get_name(enc->codec_id));
+                       "Codec %s is not supported in the official FLV specification,\n", avcodec_get_name(par->codec_id));
 
                 if (error) {
                     av_log(s, AV_LOG_ERROR,
                            "use vstrict=-1 / -strict -1 to use it anyway.\n");
                     return AVERROR(EINVAL);
                 }
-            } else if (enc->codec_id == AV_CODEC_ID_VP6) {
+            } else if (par->codec_id == AV_CODEC_ID_VP6) {
                 av_log(s, AV_LOG_WARNING,
                        "Muxing VP6 in flv will produce flipped video on playback.\n");
             }
-=======
-            flv->video_par = par;
-            if (!ff_codec_get_tag(flv_video_codec_ids, par->codec_id))
-                return unsupported_codec(s, "Video", par->codec_id);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             break;
         case AVMEDIA_TYPE_AUDIO:
             if (flv->audio_par) {
@@ -406,40 +390,29 @@ static int flv_write_header(AVFormatContext *s)
                        "at most one audio stream is supported in flv\n");
                 return AVERROR(EINVAL);
             }
-<<<<<<< HEAD
-            flv->audio_enc = enc;
-            if (get_audio_flags(s, enc) < 0)
-                return unsupported_codec(s, "Audio", enc->codec_id);
-            if (enc->codec_id == AV_CODEC_ID_PCM_S16BE)
+            flv->audio_par = par;
+            if (get_audio_flags(s, par) < 0)
+                return unsupported_codec(s, "Audio", par->codec_id);
+            if (par->codec_id == AV_CODEC_ID_PCM_S16BE)
                 av_log(s, AV_LOG_WARNING,
                        "16-bit big-endian audio in flv is valid but most likely unplayable (hardware dependent); use s16le\n");
             break;
         case AVMEDIA_TYPE_DATA:
-            if (enc->codec_id != AV_CODEC_ID_TEXT && enc->codec_id != AV_CODEC_ID_NONE)
-                return unsupported_codec(s, "Data", enc->codec_id);
-            flv->data_enc = enc;
-=======
-            flv->audio_par = par;
-            if (get_audio_flags(s, par) < 0)
-                return unsupported_codec(s, "Audio", par->codec_id);
-            break;
-        case AVMEDIA_TYPE_DATA:
-            if (par->codec_id != AV_CODEC_ID_TEXT)
+            if (par->codec_id != AV_CODEC_ID_TEXT && par->codec_id != AV_CODEC_ID_NONE)
                 return unsupported_codec(s, "Data", par->codec_id);
             flv->data_par = par;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             break;
         case AVMEDIA_TYPE_SUBTITLE:
-            if (enc->codec_id != AV_CODEC_ID_TEXT) {
+            if (par->codec_id != AV_CODEC_ID_TEXT) {
                 av_log(s, AV_LOG_ERROR, "Subtitle codec '%s' for stream %d is not compatible with FLV\n",
-                       avcodec_get_name(enc->codec_id), i);
+                       avcodec_get_name(par->codec_id), i);
                 return AVERROR_INVALIDDATA;
             }
-            flv->data_enc = enc;
+            flv->data_par = par;
             break;
         default:
             av_log(s, AV_LOG_ERROR, "Codec type '%s' for stream %d is not compatible with FLV\n",
-                   av_get_media_type_string(enc->codec_type), i);
+                   av_get_media_type_string(par->codec_type), i);
             return AVERROR(EINVAL);
         }
         avpriv_set_pts_info(s->streams[i], 32, 1, 1000); /* 32 bit pts in ms */
@@ -473,13 +446,8 @@ static int flv_write_header(AVFormatContext *s)
     write_metadata(s, 0);
 
     for (i = 0; i < s->nb_streams; i++) {
-<<<<<<< HEAD
-        AVCodecContext *enc = s->streams[i]->codec;
-        if (enc->codec_id == AV_CODEC_ID_AAC || enc->codec_id == AV_CODEC_ID_H264 || enc->codec_id == AV_CODEC_ID_MPEG4) {
-=======
         AVCodecParameters *par = s->streams[i]->codecpar;
-        if (par->codec_id == AV_CODEC_ID_AAC || par->codec_id == AV_CODEC_ID_H264) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        if (par->codec_id == AV_CODEC_ID_AAC || par->codec_id == AV_CODEC_ID_H264 || par->codec_id == AV_CODEC_ID_MPEG4) {
             int64_t pos;
             avio_w8(pb, par->codec_type == AVMEDIA_TYPE_VIDEO ?
                     FLV_TAG_TYPE_VIDEO : FLV_TAG_TYPE_AUDIO);
@@ -491,20 +459,19 @@ static int flv_write_header(AVFormatContext *s)
             if (par->codec_id == AV_CODEC_ID_AAC) {
                 avio_w8(pb, get_audio_flags(s, par));
                 avio_w8(pb, 0); // AAC sequence header
-<<<<<<< HEAD
 
-                if (!enc->extradata_size && flv->flags & 1) {
+                if (!par->extradata_size && flv->flags & 1) {
                     PutBitContext pbc;
                     int samplerate_index;
-                    int channels = flv->audio_enc->channels - (flv->audio_enc->channels == 8 ? 1 : 0);
+                    int channels = flv->audio_par->channels - (flv->audio_par->channels == 8 ? 1 : 0);
                     uint8_t data[2];
 
                     for (samplerate_index = 0; samplerate_index < 16; samplerate_index++)
-                        if (flv->audio_enc->sample_rate == mpeg4audio_sample_rates[samplerate_index])
+                        if (flv->audio_par->sample_rate == mpeg4audio_sample_rates[samplerate_index])
                             break;
 
                     init_put_bits(&pbc, data, sizeof(data));
-                    put_bits(&pbc, 5, flv->audio_enc->profile + 1); //profile
+                    put_bits(&pbc, 5, flv->audio_par->profile + 1); //profile
                     put_bits(&pbc, 4, samplerate_index); //sample rate index
                     put_bits(&pbc, 4, channels);
                     put_bits(&pbc, 1, 0); //frame length - 1024 samples
@@ -517,10 +484,7 @@ static int flv_write_header(AVFormatContext *s)
 
                     av_log(s, AV_LOG_WARNING, "AAC sequence header: %02x %02x.\n", data[0], data[1]);
                 }
-                avio_write(pb, enc->extradata, enc->extradata_size);
-=======
                 avio_write(pb, par->extradata, par->extradata_size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             } else {
                 avio_w8(pb, par->codec_tag | FLV_FRAME_KEY); // flags
                 avio_w8(pb, 0); // AVC sequence header
@@ -550,13 +514,8 @@ static int flv_write_trailer(AVFormatContext *s)
     for (i = 0; i < s->nb_streams; i++) {
         AVCodecParameters *par = s->streams[i]->codecpar;
         FLVStreamContext *sc = s->streams[i]->priv_data;
-<<<<<<< HEAD
-        if (enc->codec_type == AVMEDIA_TYPE_VIDEO &&
-                (enc->codec_id == AV_CODEC_ID_H264 || enc->codec_id == AV_CODEC_ID_MPEG4))
-=======
         if (par->codec_type == AVMEDIA_TYPE_VIDEO &&
-            par->codec_id == AV_CODEC_ID_H264)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                (par->codec_id == AV_CODEC_ID_H264 || par->codec_id == AV_CODEC_ID_MPEG4))
             put_avc_eos_tag(pb, sc->last_ts);
     }
 
@@ -587,17 +546,10 @@ static int flv_write_packet(AVFormatContext *s, AVPacket *pkt)
     uint8_t *data = NULL;
     int flags = -1, flags_size, ret;
 
-<<<<<<< HEAD
-    if (enc->codec_id == AV_CODEC_ID_VP6F || enc->codec_id == AV_CODEC_ID_VP6A ||
-        enc->codec_id == AV_CODEC_ID_VP6  || enc->codec_id == AV_CODEC_ID_AAC)
-        flags_size = 2;
-    else if (enc->codec_id == AV_CODEC_ID_H264 || enc->codec_id == AV_CODEC_ID_MPEG4)
-=======
     if (par->codec_id == AV_CODEC_ID_VP6F || par->codec_id == AV_CODEC_ID_VP6A ||
-        par->codec_id == AV_CODEC_ID_AAC)
+        par->codec_id == AV_CODEC_ID_VP6  || par->codec_id == AV_CODEC_ID_AAC)
         flags_size = 2;
-    else if (par->codec_id == AV_CODEC_ID_H264)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    else if (par->codec_id == AV_CODEC_ID_H264 || par->codec_id == AV_CODEC_ID_MPEG4)
         flags_size = 5;
     else
         flags_size = 1;
@@ -641,13 +593,12 @@ static int flv_write_packet(AVFormatContext *s, AVPacket *pkt)
         return AVERROR(EINVAL);
     }
 
-<<<<<<< HEAD
-    if (enc->codec_id == AV_CODEC_ID_H264 || enc->codec_id == AV_CODEC_ID_MPEG4) {
+    if (par->codec_id == AV_CODEC_ID_H264 || par->codec_id == AV_CODEC_ID_MPEG4) {
         /* check if extradata looks like mp4 formatted */
-        if (enc->extradata_size > 0 && *(uint8_t*)enc->extradata != 1)
+        if (par->extradata_size > 0 && *(uint8_t*)par->extradata != 1)
             if ((ret = ff_avc_parse_nal_units_buf(pkt->data, &data, &size)) < 0)
                 return ret;
-    } else if (enc->codec_id == AV_CODEC_ID_AAC && pkt->size > 2 &&
+    } else if (par->codec_id == AV_CODEC_ID_AAC && pkt->size > 2 &&
                (AV_RB16(pkt->data) & 0xfff0) == 0xfff0) {
         if (!s->streams[pkt->stream_index]->nb_frames) {
         av_log(s, AV_LOG_ERROR, "Malformed AAC bitstream detected: "
@@ -657,13 +608,6 @@ static int flv_write_packet(AVFormatContext *s, AVPacket *pkt)
         }
         av_log(s, AV_LOG_WARNING, "aac bitstream error\n");
     }
-=======
-    if (par->codec_id == AV_CODEC_ID_H264)
-        /* check if extradata looks like MP4 */
-        if (par->extradata_size > 0 && *(uint8_t*)par->extradata != 1)
-            if (ff_avc_parse_nal_units_buf(pkt->data, &data, &size) < 0)
-                return -1;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     /* check Speex packet duration */
     if (par->codec_id == AV_CODEC_ID_SPEEX && ts - sc->last_ts > 160)
@@ -685,15 +629,11 @@ static int flv_write_packet(AVFormatContext *s, AVPacket *pkt)
     avio_w8(pb, (ts >> 24) & 0x7F); // timestamps are 32 bits _signed_
     avio_wb24(pb, flv->reserved);
 
-<<<<<<< HEAD
-    if (enc->codec_type == AVMEDIA_TYPE_DATA ||
-        enc->codec_type == AVMEDIA_TYPE_SUBTITLE ) {
-=======
-    if (par->codec_type == AVMEDIA_TYPE_DATA) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    if (par->codec_type == AVMEDIA_TYPE_DATA ||
+        par->codec_type == AVMEDIA_TYPE_SUBTITLE ) {
         int data_size;
         int64_t metadata_size_pos = avio_tell(pb);
-        if (enc->codec_id == AV_CODEC_ID_TEXT) {
+        if (par->codec_id == AV_CODEC_ID_TEXT) {
             // legacy FFmpeg magic?
             avio_w8(pb, AMF_DATA_TYPE_STRING);
             put_amf_string(pb, "onTextData");
@@ -720,27 +660,17 @@ static int flv_write_packet(AVFormatContext *s, AVPacket *pkt)
     } else {
         av_assert1(flags>=0);
         avio_w8(pb,flags);
-<<<<<<< HEAD
-        if (enc->codec_id == AV_CODEC_ID_VP6)
+        if (par->codec_id == AV_CODEC_ID_VP6)
             avio_w8(pb,0);
-        if (enc->codec_id == AV_CODEC_ID_VP6F || enc->codec_id == AV_CODEC_ID_VP6A) {
-            if (enc->extradata_size)
-                avio_w8(pb, enc->extradata[0]);
-=======
         if (par->codec_id == AV_CODEC_ID_VP6F || par->codec_id == AV_CODEC_ID_VP6A) {
             if (par->extradata_size)
                 avio_w8(pb, par->extradata[0]);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             else
                 avio_w8(pb, ((FFALIGN(par->width,  16) - par->width) << 4) |
                              (FFALIGN(par->height, 16) - par->height));
         } else if (par->codec_id == AV_CODEC_ID_AAC)
             avio_w8(pb, 1); // AAC raw
-<<<<<<< HEAD
-        else if (enc->codec_id == AV_CODEC_ID_H264 || enc->codec_id == AV_CODEC_ID_MPEG4) {
-=======
-        else if (par->codec_id == AV_CODEC_ID_H264) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        else if (par->codec_id == AV_CODEC_ID_H264 || par->codec_id == AV_CODEC_ID_MPEG4) {
             avio_w8(pb, 1); // AVC NALU
             avio_wb24(pb, pkt->pts - pkt->dts);
         }
