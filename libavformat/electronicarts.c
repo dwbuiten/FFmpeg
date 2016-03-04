@@ -499,14 +499,14 @@ static int init_video_stream(AVFormatContext *s, VideoProperties *video)
     if (!st)
         return AVERROR(ENOMEM);
     video->stream_index = st->index;
-    st->codec->codec_type  = AVMEDIA_TYPE_VIDEO;
-    st->codec->codec_id    = video->codec;
+    st->codecpar->codec_type  = AVMEDIA_TYPE_VIDEO;
+    st->codecpar->codec_id    = video->codec;
     // parsing is necessary to make FFmpeg generate correct timestamps
-    if (st->codec->codec_id == AV_CODEC_ID_MPEG2VIDEO)
+    if (st->codecpar->codec_id == AV_CODEC_ID_MPEG2VIDEO)
         st->need_parsing = AVSTREAM_PARSE_HEADERS;
-    st->codec->codec_tag   = 0; /* no fourcc */
-    st->codec->width       = video->width;
-    st->codec->height      = video->height;
+    st->codecpar->codec_tag   = 0; /* no fourcc */
+    st->codecpar->width       = video->width;
+    st->codecpar->height      = video->height;
     st->duration           = st->nb_frames = video->nb_frames;
     if (video->time_base.num)
         avpriv_set_pts_info(st, 64, video->time_base.num, video->time_base.den);
@@ -523,26 +523,8 @@ static int ea_read_header(AVFormatContext *s)
     if (process_ea_header(s)<=0)
         return AVERROR(EIO);
 
-<<<<<<< HEAD
     if (init_video_stream(s, &ea->video) || init_video_stream(s, &ea->alpha))
         return AVERROR(ENOMEM);
-=======
-    if (ea->video_codec) {
-        /* initialize the video decoder stream */
-        st = avformat_new_stream(s, NULL);
-        if (!st)
-            return AVERROR(ENOMEM);
-        ea->video_stream_index = st->index;
-        st->codecpar->codec_type  = AVMEDIA_TYPE_VIDEO;
-        st->codecpar->codec_id    = ea->video_codec;
-        st->codecpar->codec_tag   = 0; /* no fourcc */
-        st->codecpar->width       = ea->width;
-        st->codecpar->height      = ea->height;
-        avpriv_set_pts_info(st, 33, ea->time_base.num, ea->time_base.den);
-        st->avg_frame_rate     = (AVRational) { ea->time_base.den,
-                                                ea->time_base.num };
-    }
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     if (ea->audio_codec) {
         if (ea->num_channels <= 0 || ea->num_channels > 2) {
