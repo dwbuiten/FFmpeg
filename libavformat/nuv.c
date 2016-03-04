@@ -87,16 +87,8 @@ static int get_codec_data(AVIOContext *pb, AVStream *vst,
                     av_freep(&vst->codecpar->extradata);
                     vst->codecpar->extradata_size = 0;
                 }
-<<<<<<< HEAD
-                if (ff_get_extradata(vst->codec, pb, size) < 0)
+                if (ff_get_extradata(vst->codecpar, pb, size) < 0)
                     return AVERROR(ENOMEM);
-=======
-                vst->codecpar->extradata = av_malloc(size);
-                if (!vst->codecpar->extradata)
-                    return AVERROR(ENOMEM);
-                vst->codecpar->extradata_size = size;
-                avio_read(pb, vst->codecpar->extradata, size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                 size = 0;
                 if (!myth)
                     return 0;
