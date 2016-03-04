@@ -53,16 +53,12 @@ static int adx_read_packet(AVFormatContext *s, AVPacket *pkt)
     AVCodecParameters *par = s->streams[0]->codecpar;
     int ret, size;
 
-<<<<<<< HEAD
-    if (avctx->channels <= 0) {
-        av_log(s, AV_LOG_ERROR, "invalid number of channels %d\n", avctx->channels);
+    if (par->channels <= 0) {
+        av_log(s, AV_LOG_ERROR, "invalid number of channels %d\n", par->channels);
         return AVERROR_INVALIDDATA;
     }
 
-    size = BLOCK_SIZE * avctx->channels;
-=======
     size = BLOCK_SIZE * par->channels;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     pkt->pos = avio_tell(s->pb);
     pkt->stream_index = 0;
@@ -98,19 +94,8 @@ static int adx_read_header(AVFormatContext *s)
     c->header_size = avio_rb16(s->pb) + 4;
     avio_seek(s->pb, -4, SEEK_CUR);
 
-<<<<<<< HEAD
-    if (ff_get_extradata(avctx, s->pb, c->header_size) < 0)
+    if (ff_get_extradata(par, s->pb, c->header_size) < 0)
         return AVERROR(ENOMEM);
-=======
-    par->extradata = av_mallocz(c->header_size + AV_INPUT_BUFFER_PADDING_SIZE);
-    if (!par->extradata)
-        return AVERROR(ENOMEM);
-    if (avio_read(s->pb, par->extradata, c->header_size) < c->header_size) {
-        av_freep(&par->extradata);
-        return AVERROR(EIO);
-    }
-    par->extradata_size = c->header_size;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     if (par->extradata_size < 12) {
         av_log(s, AV_LOG_ERROR, "Invalid extradata size.\n");
