@@ -590,12 +590,8 @@ int ff_mov_read_chan(AVFormatContext *s, AVIOContext *pb, AVStream *st,
         if (label_mask)
             st->codecpar->channel_layout = label_mask;
     } else
-<<<<<<< HEAD
-        st->codec->channel_layout = ff_mov_get_channel_layout(layout_tag, bitmap);
-    avio_skip(pb, size - 12);
-=======
         st->codecpar->channel_layout = ff_mov_get_channel_layout(layout_tag, bitmap);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    avio_skip(pb, size - 12);
 
     return 0;
 }
