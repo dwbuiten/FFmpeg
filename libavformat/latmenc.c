@@ -86,16 +86,11 @@ static int latm_write_header(AVFormatContext *s)
     LATMContext *ctx = s->priv_data;
     AVCodecParameters *par = s->streams[0]->codecpar;
 
-<<<<<<< HEAD
-    if (avctx->codec_id == AV_CODEC_ID_AAC_LATM)
+    if (par->codec_id == AV_CODEC_ID_AAC_LATM)
         return 0;
 
-    if (avctx->extradata_size > 0 &&
-        latm_decode_extradata(ctx, avctx->extradata, avctx->extradata_size) < 0)
-=======
     if (par->extradata_size > 0 &&
         latm_decode_extradata(ctx, par->extradata, par->extradata_size) < 0)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         return AVERROR_INVALIDDATA;
 
     return 0;
@@ -104,23 +99,13 @@ static int latm_write_header(AVFormatContext *s)
 static void latm_write_frame_header(AVFormatContext *s, PutBitContext *bs)
 {
     LATMContext *ctx = s->priv_data;
-<<<<<<< HEAD
-    AVCodecContext *avctx = s->streams[0]->codec;
-=======
     AVCodecParameters *par = s->streams[0]->codecpar;
-    GetBitContext gb;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     int header_size;
 
     /* AudioMuxElement */
     put_bits(bs, 1, !!ctx->counter);
 
     if (!ctx->counter) {
-<<<<<<< HEAD
-=======
-        init_get_bits(&gb, par->extradata, par->extradata_size * 8);
-
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         /* StreamMuxConfig */
         put_bits(bs, 1, 0); /* audioMuxVersion */
         put_bits(bs, 1, 1); /* allStreamsSameTimeFraming */
@@ -130,23 +115,16 @@ static void latm_write_frame_header(AVFormatContext *s, PutBitContext *bs)
 
         /* AudioSpecificConfig */
         if (ctx->object_type == AOT_ALS) {
-<<<<<<< HEAD
-            header_size = avctx->extradata_size-(ctx->off >> 3);
-            avpriv_copy_bits(bs, &avctx->extradata[ctx->off >> 3], header_size);
+            header_size = par->extradata_size-(ctx->off >> 3);
+            avpriv_copy_bits(bs, &par->extradata[ctx->off >> 3], header_size);
         } else {
             // + 3 assumes not scalable and dependsOnCoreCoder == 0,
             // see decode_ga_specific_config in libavcodec/aacdec.c
-            avpriv_copy_bits(bs, avctx->extradata, ctx->off + 3);
-=======
-            header_size = par->extradata_size-(ctx->off + 7) >> 3;
-            avpriv_copy_bits(bs, &par->extradata[ctx->off], header_size);
-        } else {
             avpriv_copy_bits(bs, par->extradata, ctx->off + 3);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
             if (!ctx->channel_conf) {
                 GetBitContext gb;
-                int ret = init_get_bits8(&gb, avctx->extradata, avctx->extradata_size);
+                int ret = init_get_bits8(&gb, par->extradata, par->extradata_size);
                 av_assert0(ret >= 0); // extradata size has been checked already, so this should not fail
                 skip_bits_long(&gb, ctx->off + 3);
                 avpriv_copy_pce_data(bs, &gb);
@@ -172,7 +150,7 @@ static int latm_write_packet(AVFormatContext *s, AVPacket *pkt)
     int i, len;
     uint8_t loas_header[] = "\x56\xe0\x00";
 
-    if (s->streams[0]->codec->codec_id == AV_CODEC_ID_AAC_LATM)
+    if (s->streams[0]->codecpar->codec_id == AV_CODEC_ID_AAC_LATM)
         return ff_raw_write_packet(s, pkt);
 
     if (pkt->size > 2 && pkt->data[0] == 0xff && (pkt->data[1] >> 4) == 0xf) {
@@ -180,7 +158,7 @@ static int latm_write_packet(AVFormatContext *s, AVPacket *pkt)
         return AVERROR_INVALIDDATA;
     }
 
-    if (!s->streams[0]->codec->extradata) {
+    if (!s->streams[0]->codecpar->extradata) {
         if(pkt->size > 2 && pkt->data[0] == 0x56 && (pkt->data[1] >> 4) == 0xe &&
             (AV_RB16(pkt->data + 1) & 0x1FFF) + 3 == pkt->size)
             return ff_raw_write_packet(s, pkt);
