@@ -511,7 +511,7 @@ static inline int ff_rename(const char *oldpath, const char *newpath, void *logc
  * @param size size of extradata
  * @return 0 if OK, AVERROR_xxx on error
  */
-int ff_alloc_extradata(AVCodecContext *avctx, int size);
+int ff_alloc_extradata(AVCodecParameters *par, int size);
 
 /**
  * Allocate extradata with additional AV_INPUT_BUFFER_PADDING_SIZE at end
@@ -520,7 +520,7 @@ int ff_alloc_extradata(AVCodecContext *avctx, int size);
  * @param size size of extradata
  * @return >= 0 if OK, AVERROR_xxx on error
  */
-int ff_get_extradata(AVCodecContext *avctx, AVIOContext *pb, int size);
+int ff_get_extradata(AVCodecParameters *par, AVIOContext *pb, int size);
 
 /**
  * add frame for rfps calculation.
