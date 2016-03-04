@@ -350,20 +350,16 @@ static av_cold int mpeg_mux_init(AVFormatContext *ctx)
 
         switch (st->codecpar->codec_type) {
         case AVMEDIA_TYPE_AUDIO:
-<<<<<<< HEAD
             if (!s->is_mpeg2 &&
-                (st->codec->codec_id == AV_CODEC_ID_AC3 ||
-                 st->codec->codec_id == AV_CODEC_ID_DTS ||
-                 st->codec->codec_id == AV_CODEC_ID_PCM_S16BE))
+                (st->codecpar->codec_id == AV_CODEC_ID_AC3 ||
+                 st->codecpar->codec_id == AV_CODEC_ID_DTS ||
+                 st->codecpar->codec_id == AV_CODEC_ID_PCM_S16BE))
                  av_log(ctx, AV_LOG_WARNING,
                         "%s in MPEG-1 system streams is not widely supported, "
                         "consider using the vob or the dvd muxer "
                         "to force a MPEG-2 program stream.\n",
-                        avcodec_get_name(st->codec->codec_id));
-            if (st->codec->codec_id == AV_CODEC_ID_AC3) {
-=======
+                        avcodec_get_name(st->codecpar->codec_id));
             if (st->codecpar->codec_id == AV_CODEC_ID_AC3) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                 stream->id = ac3_id++;
             } else if (st->codecpar->codec_id == AV_CODEC_ID_DTS) {
                 stream->id = dts_id++;
@@ -419,7 +415,7 @@ static av_cold int mpeg_mux_init(AVFormatContext *ctx)
             break;
         default:
             av_log(ctx, AV_LOG_ERROR, "Invalid media type %s for output stream #%d\n",
-                   av_get_media_type_string(st->codec->codec_type), i);
+                   av_get_media_type_string(st->codecpar->codec_type), i);
             return AVERROR(EINVAL);
         }
         stream->fifo = av_fifo_alloc(16);
