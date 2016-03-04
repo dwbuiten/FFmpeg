@@ -105,13 +105,13 @@ static int dv_write_pack(enum dv_pack_type pack_id, DVMuxContext *c, uint8_t* bu
     case dv_audio_source:  /* AAUX source pack */
         va_start(ap, buf);
         channel = va_arg(ap, int);
-        if (c->ast[channel]->codec->sample_rate == 44100) {
+        if (c->ast[channel]->codecpar->sample_rate == 44100) {
             audio_type = 1;
-        } else if (c->ast[channel]->codec->sample_rate == 32000)
+        } else if (c->ast[channel]->codecpar->sample_rate == 32000)
             audio_type = 2;
         buf[1] = (1 << 7) | /* locked mode -- SMPTE only supports locked mode */
                  (1 << 6) | /* reserved -- always 1 */
-                 (dv_audio_frame_size(c->sys, c->frames, c->ast[channel]->codec->sample_rate) -
+                 (dv_audio_frame_size(c->sys, c->frames, c->ast[channel]->codecpar->sample_rate) -
                   c->sys->audio_min_samples[audio_type]);
                             /* # of samples      */
         buf[2] = (0 << 7) | /* multi-stereo      */
@@ -186,7 +186,7 @@ static int dv_write_pack(enum dv_pack_type pack_id, DVMuxContext *c, uint8_t* bu
 static void dv_inject_audio(DVMuxContext *c, int channel, uint8_t* frame_ptr)
 {
     int i, j, d, of, size;
-    size = 4 * dv_audio_frame_size(c->sys, c->frames, c->ast[channel]->codec->sample_rate);
+    size = 4 * dv_audio_frame_size(c->sys, c->frames, c->ast[channel]->codecpar->sample_rate);
     frame_ptr += channel * c->sys->difseg_size * 150 * 80;
     for (i = 0; i < c->sys->difseg_size; i++) {
         frame_ptr += 6 * 80; /* skip DIF segment header */
@@ -268,7 +268,7 @@ static int dv_assemble_frame(AVFormatContext *s,
             av_log(s, AV_LOG_ERROR, "Can't process DV frame #%d. Insufficient video data or severe sync problem.\n", c->frames);
         av_fifo_generic_write(c->audio_data[i], data, data_size, NULL);
 
-        reqasize = 4 * dv_audio_frame_size(c->sys, c->frames, st->codec->sample_rate);
+        reqasize = 4 * dv_audio_frame_size(c->sys, c->frames, st->codecpar->sample_rate);
 
         /* Let us see if we've got enough audio for one DV frame. */
         c->has_audio |= ((reqasize <= av_fifo_size(c->audio_data[i])) << i);
@@ -284,7 +284,7 @@ static int dv_assemble_frame(AVFormatContext *s,
         c->has_audio = 0;
         for (i=0; i < c->n_ast; i++) {
             dv_inject_audio(c, i, *frame);
-            reqasize = 4 * dv_audio_frame_size(c->sys, c->frames, c->ast[i]->codec->sample_rate);
+            reqasize = 4 * dv_audio_frame_size(c->sys, c->frames, c->ast[i]->codecpar->sample_rate);
             av_fifo_drain(c->audio_data[i], reqasize);
             c->has_audio |= ((reqasize <= av_fifo_size(c->audio_data[i])) << i);
         }
@@ -332,34 +332,25 @@ static DVMuxContext* dv_init_mux(AVFormatContext* s)
     if (!vst || vst->codecpar->codec_id != AV_CODEC_ID_DVVIDEO)
         goto bail_out;
     for (i=0; i<c->n_ast; i++) {
-<<<<<<< HEAD
         if (c->ast[i]) {
-            if(c->ast[i]->codec->codec_id    != AV_CODEC_ID_PCM_S16LE ||
-               c->ast[i]->codec->channels    != 2)
+            if(c->ast[i]->codecpar->codec_id    != AV_CODEC_ID_PCM_S16LE ||
+               c->ast[i]->codecpar->channels    != 2)
                 goto bail_out;
-            if (c->ast[i]->codec->sample_rate != 48000 &&
-                c->ast[i]->codec->sample_rate != 44100 &&
-                c->ast[i]->codec->sample_rate != 32000    )
+            if (c->ast[i]->codecpar->sample_rate != 48000 &&
+                c->ast[i]->codecpar->sample_rate != 44100 &&
+                c->ast[i]->codecpar->sample_rate != 32000    )
                 goto bail_out;
         }
     }
-    c->sys = av_dv_codec_profile2(vst->codec->width, vst->codec->height,
-                                  vst->codec->pix_fmt, vst->codec->time_base);
-=======
-        if (c->ast[i] && (c->ast[i]->codecpar->codec_id    != AV_CODEC_ID_PCM_S16LE ||
-                          c->ast[i]->codecpar->sample_rate != 48000 ||
-                          c->ast[i]->codecpar->channels    != 2))
-            goto bail_out;
-    }
-    c->sys = av_dv_codec_profile(vst->codecpar->width, vst->codecpar->height, vst->codecpar->format);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    c->sys = av_dv_codec_profile2(vst->codecpar->width, vst->codecpar->height,
+                                  vst->codecpar->format, vst->time_base);
     if (!c->sys)
         goto bail_out;
 
     if ((c->sys->time_base.den != 25 && c->sys->time_base.den != 50) || c->sys->time_base.num != 1) {
-        if (c->ast[0] && c->ast[0]->codec->sample_rate != 48000)
+        if (c->ast[0] && c->ast[0]->codecpar->sample_rate != 48000)
             goto bail_out;
-        if (c->ast[1] && c->ast[1]->codec->sample_rate != 48000)
+        if (c->ast[1] && c->ast[1]->codecpar->sample_rate != 48000)
             goto bail_out;
     }
 
