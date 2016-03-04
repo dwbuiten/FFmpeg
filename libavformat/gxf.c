@@ -118,24 +118,12 @@ static int get_sindex(AVFormatContext *s, int id, int format) {
             st->codecpar->codec_id = AV_CODEC_ID_MJPEG;
             break;
         case 13:
-<<<<<<< HEAD
-=======
-        case 15:
-            st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
-            st->codecpar->codec_id = AV_CODEC_ID_DVVIDEO;
-            break;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         case 14:
         case 15:
         case 16:
-<<<<<<< HEAD
         case 25:
-            st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-            st->codec->codec_id = AV_CODEC_ID_DVVIDEO;
-=======
             st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
             st->codecpar->codec_id = AV_CODEC_ID_DVVIDEO;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             break;
         case 11:
         case 12:
@@ -179,8 +167,8 @@ static int get_sindex(AVFormatContext *s, int id, int format) {
             break;
         case 26: /* AVCi50 / AVCi100 (AVC Intra) */
         case 29: /* AVCHD */
-            st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-            st->codec->codec_id = AV_CODEC_ID_H264;
+            st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+            st->codecpar->codec_id = AV_CODEC_ID_H264;
             st->need_parsing = AVSTREAM_PARSE_HEADERS;
             break;
         // timecode tracks:
@@ -191,8 +179,8 @@ static int get_sindex(AVFormatContext *s, int id, int format) {
             st->codecpar->codec_id = AV_CODEC_ID_NONE;
             break;
         case 30:
-            st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-            st->codec->codec_id = AV_CODEC_ID_DNXHD;
+            st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+            st->codecpar->codec_id = AV_CODEC_ID_DNXHD;
             break;
         default:
             st->codecpar->codec_type = AVMEDIA_TYPE_UNKNOWN;

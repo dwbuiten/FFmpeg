@@ -207,16 +207,10 @@ static int gxf_write_mpeg_auxiliary(AVIOContext *pb, AVStream *st)
 
     size = snprintf(buffer, sizeof(buffer), "Ver 1\nBr %.6f\nIpg 1\nPpi %d\nBpiop %d\n"
                     "Pix 0\nCf %d\nCg %d\nSl %d\nnl16 %d\nVi 1\nf1 1\n",
-<<<<<<< HEAD
-                    (float)st->codec->bit_rate, sc->p_per_gop, sc->b_per_i_or_p,
-                    st->codec->pix_fmt == AV_PIX_FMT_YUV422P ? 2 : 1, sc->first_gop_closed == 1,
-                    starting_line, (st->codec->height + 15) / 16);
-    av_assert0(size < sizeof(buffer));
-=======
                     (float)st->codecpar->bit_rate, sc->p_per_gop, sc->b_per_i_or_p,
-                    st->codecpar->format  == AV_PIX_FMT_YUV422P ? 2 : 1, sc->first_gop_closed == 1,
+                    st->codecpar->format == AV_PIX_FMT_YUV422P ? 2 : 1, sc->first_gop_closed == 1,
                     starting_line, (st->codecpar->height + 15) / 16);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    av_assert0(size < sizeof(buffer));
     avio_w8(pb, TRACK_MPG_AUX);
     avio_w8(pb, size + 1);
     avio_write(pb, (uint8_t *)buffer, size + 1);
@@ -229,7 +223,7 @@ static int gxf_write_dv_auxiliary(AVIOContext *pb, AVStream *st)
 
     avio_w8(pb, TRACK_AUX);
     avio_w8(pb, 8);
-    if (st->codec->pix_fmt == AV_PIX_FMT_YUV420P)
+    if (st->codecpar->format == AV_PIX_FMT_YUV420P)
         track_aux_data |= 0x01;     /* marks stream as DVCAM instead of DVPRO */
     track_aux_data |= 0x40000000;   /* aux data is valid */
     avio_wl64(pb, track_aux_data);
@@ -562,7 +556,7 @@ static int gxf_write_umf_media_dv(AVIOContext *pb, GXFStreamContext *sc, AVStrea
 {
     int dv_umf_data = 0;
 
-    if (st->codec->pix_fmt == AV_PIX_FMT_YUV420P)
+    if (st->codecpar->format == AV_PIX_FMT_YUV420P)
         dv_umf_data |= 0x20; /* marks as DVCAM instead of DVPRO */
     avio_wl32(pb, dv_umf_data);
     avio_wl32(pb, 0);

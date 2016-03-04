@@ -1375,7 +1375,7 @@ static void add_metadata_from_renditions(AVFormatContext *s, struct playlist *pl
     for (i = 0; i < pls->ctx->nb_streams; i++) {
         AVStream *st = s->streams[pls->stream_offset + i];
 
-        if (st->codec->codec_type != type)
+        if (st->codecpar->codec_type != type)
             continue;
 
         for (; rend_idx < pls->n_renditions; rend_idx++) {
@@ -1650,21 +1650,13 @@ static int hls_read_header(AVFormatContext *s)
                 goto fail;
             }
             st->id = i;
-<<<<<<< HEAD
 
-            avcodec_copy_context(st->codec, pls->ctx->streams[j]->codec);
+            avcodec_parameters_copy(st->codecpar, pls->ctx->streams[j]->codecpar);
 
             if (pls->is_id3_timestamped) /* custom timestamps via id3 */
                 avpriv_set_pts_info(st, 33, 1, MPEG_TIME_BASE);
             else
                 avpriv_set_pts_info(st, ist->pts_wrap_bits, ist->time_base.num, ist->time_base.den);
-=======
-            avpriv_set_pts_info(st, ist->pts_wrap_bits, ist->time_base.num, ist->time_base.den);
-            avcodec_parameters_copy(st->codecpar, v->ctx->streams[j]->codecpar);
-            if (v->bandwidth)
-                av_dict_set(&st->metadata, "variant_bitrate", bitrate_str,
-                                 0);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         }
 
         add_metadata_from_renditions(s, pls, AVMEDIA_TYPE_AUDIO);

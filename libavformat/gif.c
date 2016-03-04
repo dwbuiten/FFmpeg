@@ -50,12 +50,12 @@ static int get_palette_transparency_index(const uint32_t *palette)
     return smallest_alpha < 128 ? transparent_color_index : -1;
 }
 
-static int gif_image_write_header(AVIOContext *pb, const AVCodecContext *avctx,
+static int gif_image_write_header(AVIOContext *pb, AVStream *st,
                                   int loop_count, uint32_t *palette)
 {
     int i;
     int64_t aspect = 0;
-    const AVRational sar = avctx->sample_aspect_ratio;
+    const AVRational sar = st->sample_aspect_ratio;
 
     if (sar.num > 0 && sar.den > 0) {
         aspect = sar.num * 64LL / sar.den - 15;
@@ -65,8 +65,8 @@ static int gif_image_write_header(AVIOContext *pb, const AVCodecContext *avctx,
 
     avio_write(pb, "GIF", 3);
     avio_write(pb, "89a", 3);
-    avio_wl16(pb, avctx->width);
-    avio_wl16(pb, avctx->height);
+    avio_wl16(pb, st->codecpar->width);
+    avio_wl16(pb, st->codecpar->height);
 
     if (palette) {
         const int bcid = get_palette_transparency_index(palette);
@@ -112,76 +112,35 @@ typedef struct GIFContext {
 static int gif_write_header(AVFormatContext *s)
 {
     GIFContext *gif = s->priv_data;
-<<<<<<< HEAD
-    AVCodecContext *video_enc;
+    AVCodecParameters *video_par;
     uint32_t palette[AVPALETTE_COUNT];
 
     if (s->nb_streams != 1 ||
-        s->streams[0]->codec->codec_type != AVMEDIA_TYPE_VIDEO ||
-        s->streams[0]->codec->codec_id   != AV_CODEC_ID_GIF) {
+        s->streams[0]->codecpar->codec_type != AVMEDIA_TYPE_VIDEO ||
+        s->streams[0]->codecpar->codec_id   != AV_CODEC_ID_GIF) {
         av_log(s, AV_LOG_ERROR,
                "GIF muxer supports only a single video GIF stream.\n");
         return AVERROR(EINVAL);
     }
 
-    video_enc = s->streams[0]->codec;
+    video_par = s->streams[0]->codecpar;
 
     avpriv_set_pts_info(s->streams[0], 64, 1, 100);
-    if (avpriv_set_systematic_pal2(palette, video_enc->pix_fmt) < 0) {
-        av_assert0(video_enc->pix_fmt == AV_PIX_FMT_PAL8);
+    if (avpriv_set_systematic_pal2(palette, video_par->format) < 0) {
+        av_assert0(video_par->format == AV_PIX_FMT_PAL8);
         /* delay header writing: we wait for the first palette to put it
          * globally */
     } else {
-        gif_image_write_header(s->pb, video_enc, gif->loop, palette);
-=======
-    AVIOContext *pb = s->pb;
-    AVCodecParameters *par, *video_par;
-    int i, width, height /*, rate*/;
-
-/* XXX: do we reject audio streams or just ignore them ?
- *  if (s->nb_streams > 1)
- *      return -1;
- */
-    gif->time      = 0;
-    gif->file_time = 0;
-
-    video_par = NULL;
-    for (i = 0; i < s->nb_streams; i++) {
-        par = s->streams[i]->codecpar;
-        if (par->codec_type != AVMEDIA_TYPE_AUDIO)
-            video_par = par;
-    }
-
-    if (!video_par) {
-        av_free(gif);
-        return -1;
-    } else {
-        width  = video_par->width;
-        height = video_par->height;
-//        rate = video_enc->time_base.den;
-    }
-
-    if (video_par->format != AV_PIX_FMT_RGB24) {
-        av_log(s, AV_LOG_ERROR,
-               "ERROR: gif only handles the rgb24 pixel format. Use -pix_fmt rgb24.\n");
-        return AVERROR(EIO);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        gif_image_write_header(s->pb, s->streams[0], gif->loop, palette);
     }
 
     return 0;
 }
 
-<<<<<<< HEAD
 static int flush_packet(AVFormatContext *s, AVPacket *new)
 {
     GIFContext *gif = s->priv_data;
     int size, bcid;
-=======
-static int gif_write_video(AVFormatContext *s, AVStream *st,
-                           const uint8_t *buf, int size)
-{
-    AVCodecParameters *par = st->codecpar;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     AVIOContext *pb = s->pb;
     const uint32_t *palette;
     AVPacket *pkt = gif->prev_pkt;
@@ -207,7 +166,6 @@ static int gif_write_video(AVFormatContext *s, AVStream *st,
     avio_w8(pb, 0x21);
     avio_w8(pb, 0xf9);
     avio_w8(pb, 0x04); /* block size */
-<<<<<<< HEAD
     avio_w8(pb, 1<<2 | (bcid >= 0));
     avio_wl16(pb, gif->duration);
     avio_w8(pb, bcid < 0 ? DEFAULT_TRANSPARENCY_INDEX : bcid);
@@ -218,33 +176,14 @@ static int gif_write_video(AVFormatContext *s, AVStream *st,
     av_packet_unref(gif->prev_pkt);
     if (new)
         av_copy_packet(gif->prev_pkt, new);
-=======
-    avio_w8(pb, 0x04); /* flags */
-
-    /* 1 jiffy is 1/70 s */
-    /* the delay_time field indicates the number of jiffies - 1 */
-    /* XXX: should use delay, in order to be more accurate */
-    /* instead of using the same rounded value each time */
-    /* XXX: don't even remember if I really use it for now */
-    jiffies = (70 * st->time_base.num / st->time_base.den) - 1;
-
-    avio_wl16(pb, jiffies);
-
-    avio_w8(pb, 0x1f); /* transparent color index */
-    avio_w8(pb, 0x00);
-
-    gif_image_write_image(pb, 0, 0, par->width, par->height,
-                          buf, par->width * 3, AV_PIX_FMT_RGB24);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     return 0;
 }
 
 static int gif_write_packet(AVFormatContext *s, AVPacket *pkt)
 {
-<<<<<<< HEAD
     GIFContext *gif = s->priv_data;
-    const AVCodecContext *video_enc = s->streams[0]->codec;
+    AVStream *video_st = s->streams[0];
 
     if (!gif->prev_pkt) {
         gif->prev_pkt = av_malloc(sizeof(*gif->prev_pkt));
@@ -252,7 +191,7 @@ static int gif_write_packet(AVFormatContext *s, AVPacket *pkt)
             return AVERROR(ENOMEM);
 
         /* Write the first palette as global palette */
-        if (video_enc->pix_fmt == AV_PIX_FMT_PAL8) {
+        if (video_st->codecpar->format == AV_PIX_FMT_PAL8) {
             int size;
             void *palette = av_packet_get_side_data(pkt, AV_PKT_DATA_PALETTE, &size);
 
@@ -264,19 +203,12 @@ static int gif_write_packet(AVFormatContext *s, AVPacket *pkt)
                 av_log(s, AV_LOG_ERROR, "Invalid palette extradata\n");
                 return AVERROR_INVALIDDATA;
             }
-            gif_image_write_header(s->pb, video_enc, gif->loop, palette);
+            gif_image_write_header(s->pb, video_st, gif->loop, palette);
         }
 
         return av_copy_packet(gif->prev_pkt, pkt);
     }
     return flush_packet(s, pkt);
-=======
-    AVCodecParameters *par = s->streams[pkt->stream_index]->codecpar;
-    if (par->codec_type == AVMEDIA_TYPE_AUDIO)
-        return 0; /* just ignore audio */
-    else
-        return gif_write_video(s, s->streams[pkt->stream_index], pkt->data, pkt->size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 }
 
 static int gif_write_trailer(AVFormatContext *s)

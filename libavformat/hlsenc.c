@@ -288,7 +288,7 @@ static int hls_mux_init(AVFormatContext *s)
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *st;
         AVFormatContext *loc;
-        if (s->streams[i]->codec->codec_type == AVMEDIA_TYPE_SUBTITLE)
+        if (s->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
             loc = vtt_oc;
         else
             loc = oc;
@@ -642,14 +642,10 @@ static int hls_write_header(AVFormatContext *s)
 
     for (i = 0; i < s->nb_streams; i++) {
         hls->has_video +=
-<<<<<<< HEAD
-            s->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO;
-        hls->has_subtitle +=
-            s->streams[i]->codec->codec_type == AVMEDIA_TYPE_SUBTITLE;
-    }
-=======
             s->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        hls->has_subtitle +=
+            s->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE;
+    }
 
     if (hls->has_video > 1)
         av_log(s, AV_LOG_WARNING,
@@ -750,7 +746,7 @@ static int hls_write_header(AVFormatContext *s)
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *inner_st;
         AVStream *outer_st = s->streams[i];
-        if (outer_st->codec->codec_type != AVMEDIA_TYPE_SUBTITLE)
+        if (outer_st->codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE)
             inner_st = hls->avf->streams[i];
         else if (hls->vtt_avf)
             inner_st = hls->vtt_avf->streams[0];
@@ -786,7 +782,7 @@ static int hls_write_packet(AVFormatContext *s, AVPacket *pkt)
     int ret, can_split = 1;
     int stream_index = 0;
 
-    if( st->codec->codec_type == AVMEDIA_TYPE_SUBTITLE ) {
+    if( st->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE ) {
         oc = hls->vtt_avf;
         stream_index = 0;
     } else {
@@ -801,7 +797,7 @@ static int hls_write_packet(AVFormatContext *s, AVPacket *pkt)
     if (hls->has_video) {
         can_split = st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
                     pkt->flags & AV_PKT_FLAG_KEY;
-        is_ref_pkt = st->codec->codec_type == AVMEDIA_TYPE_VIDEO;
+        is_ref_pkt = st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO;
     }
     if (pkt->pts == AV_NOPTS_VALUE)
         is_ref_pkt = can_split = 0;
@@ -840,7 +836,7 @@ static int hls_write_packet(AVFormatContext *s, AVPacket *pkt)
         if (ret < 0)
             return ret;
 
-        if( st->codec->codec_type == AVMEDIA_TYPE_SUBTITLE )
+        if( st->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE )
             oc = hls->vtt_avf;
         else
         oc = hls->avf;

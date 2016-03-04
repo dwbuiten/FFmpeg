@@ -40,11 +40,7 @@ static int g722_read_header(AVFormatContext *s)
     st->codecpar->bits_per_coded_sample =
         av_get_bits_per_sample(st->codecpar->codec_id);
 
-<<<<<<< HEAD
-    av_assert0(st->codec->bits_per_coded_sample > 0);
-=======
-    assert(st->codecpar->bits_per_coded_sample > 0);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    av_assert0(st->codecpar->bits_per_coded_sample > 0);
 
     avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
     return 0;
