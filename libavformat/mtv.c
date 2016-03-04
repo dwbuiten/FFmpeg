@@ -179,19 +179,11 @@ static int mtv_read_header(AVFormatContext *s)
     if(!st)
         return AVERROR(ENOMEM);
 
-<<<<<<< HEAD
     avpriv_set_pts_info(st, 64, 1, MTV_AUDIO_SAMPLING_RATE);
-    st->codec->codec_type      = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_id        = AV_CODEC_ID_MP3;
-    st->codec->bit_rate        = mtv->audio_br;
-    st->need_parsing           = AVSTREAM_PARSE_FULL;
-=======
-    avpriv_set_pts_info(st, 64, 1, AUDIO_SAMPLING_RATE);
     st->codecpar->codec_type      = AVMEDIA_TYPE_AUDIO;
     st->codecpar->codec_id        = AV_CODEC_ID_MP3;
     st->codecpar->bit_rate        = mtv->audio_br;
     st->need_parsing              = AVSTREAM_PARSE_FULL;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     // Jump over header
 
