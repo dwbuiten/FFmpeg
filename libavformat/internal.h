@@ -130,8 +130,18 @@ struct AVStreamInternal {
      * from dts.
      */
     int reorder;
-<<<<<<< HEAD
-=======
+    /**
+     * bitstream filter to run on stream
+     * - encoding: Set by muxer using ff_stream_add_bitstream_filter
+     * - decoding: unused
+     */
+    AVBitStreamFilterContext *bsfc;
+
+    /**
+     * Whether or not check_bitstream should still be run on each packet
+     */
+    int bitstream_checked;
+
     /**
      * The codec context used by avformat_find_stream_info, the parser, etc.
      */
@@ -148,20 +158,6 @@ struct AVStreamInternal {
     // to be filled from the codec parameters
     int need_codec_update;
 #endif
-};
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
-
-    /**
-     * bitstream filter to run on stream
-     * - encoding: Set by muxer using ff_stream_add_bitstream_filter
-     * - decoding: unused
-     */
-    AVBitStreamFilterContext *bsfc;
-
-    /**
-     * Whether or not check_bitstream should still be run on each packet
-     */
-    int bitstream_checked;
 };
 
 #ifdef __GNUC__

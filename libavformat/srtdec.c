@@ -135,15 +135,9 @@ static int srt_read_header(AVFormatContext *s)
     if (!st)
         return AVERROR(ENOMEM);
     avpriv_set_pts_info(st, 64, 1, 1000);
-<<<<<<< HEAD
-    st->codec->codec_type = AVMEDIA_TYPE_SUBTITLE;
-    st->codec->codec_id   = AV_CODEC_ID_SUBRIP;
-=======
     st->codecpar->codec_type = AVMEDIA_TYPE_SUBTITLE;
-    st->codecpar->codec_id   = AV_CODEC_ID_SRT;
-    return 0;
+    st->codecpar->codec_id   = AV_CODEC_ID_SUBRIP;
 }
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     av_bprint_init(&buf, 0, AV_BPRINT_SIZE_UNLIMITED);
 
