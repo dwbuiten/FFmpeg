@@ -67,15 +67,9 @@ static int pmp_header(AVFormatContext *s)
         av_log(s, AV_LOG_ERROR, "Unsupported video format\n");
         break;
     }
-<<<<<<< HEAD
-    index_cnt = avio_rl32(pb);
-    vst->codec->width  = avio_rl32(pb);
-    vst->codec->height = avio_rl32(pb);
-=======
     index_cnt          = avio_rl32(pb);
     vst->codecpar->width  = avio_rl32(pb);
     vst->codecpar->height = avio_rl32(pb);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     tb_num = avio_rl32(pb);
     tb_den = avio_rl32(pb);
@@ -123,17 +117,10 @@ static int pmp_header(AVFormatContext *s)
         AVStream *ast = avformat_new_stream(s, NULL);
         if (!ast)
             return AVERROR(ENOMEM);
-<<<<<<< HEAD
-        ast->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-        ast->codec->codec_id = audio_codec_id;
-        ast->codec->channels = channels;
-        ast->codec->sample_rate = srate;
-=======
         ast->codecpar->codec_type  = AVMEDIA_TYPE_AUDIO;
         ast->codecpar->codec_id    = audio_codec_id;
         ast->codecpar->channels    = channels;
         ast->codecpar->sample_rate = srate;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         avpriv_set_pts_info(ast, 32, 1, srate);
     }
     return 0;
