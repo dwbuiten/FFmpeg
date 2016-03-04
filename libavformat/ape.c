@@ -360,19 +360,11 @@ static int ape_read_header(AVFormatContext * s)
     st->duration  = total_blocks;
     avpriv_set_pts_info(st, 64, 1, ape->samplerate);
 
-<<<<<<< HEAD
-    if (ff_alloc_extradata(st->codec, APE_EXTRADATA_SIZE))
+    if (ff_alloc_extradata(st->codecpar, APE_EXTRADATA_SIZE))
         return AVERROR(ENOMEM);
-    AV_WL16(st->codec->extradata + 0, ape->fileversion);
-    AV_WL16(st->codec->extradata + 2, ape->compressiontype);
-    AV_WL16(st->codec->extradata + 4, ape->formatflags);
-=======
-    st->codecpar->extradata = av_malloc(APE_EXTRADATA_SIZE);
-    st->codecpar->extradata_size = APE_EXTRADATA_SIZE;
     AV_WL16(st->codecpar->extradata + 0, ape->fileversion);
     AV_WL16(st->codecpar->extradata + 2, ape->compressiontype);
     AV_WL16(st->codecpar->extradata + 4, ape->formatflags);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     pts = 0;
     for (i = 0; i < ape->totalframes; i++) {
