@@ -101,12 +101,8 @@ typedef struct MOVTrack {
     int         track_id;
     int         tag; ///< stsd fourcc
     AVStream        *st;
-<<<<<<< HEAD
-    AVCodecContext *enc;
-    int multichannel_as_mono;
-=======
     AVCodecParameters *par;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    int multichannel_as_mono;
 
     int         vos_len;
     uint8_t     *vos_data;
