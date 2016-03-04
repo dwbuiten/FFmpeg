@@ -3207,37 +3207,37 @@ static int tb_unreliable(AVCodecContext *c)
     return 0;
 }
 
-int ff_alloc_extradata(AVCodecContext *avctx, int size)
+int ff_alloc_extradata(AVCodecParameters *par, int size)
 {
     int ret;
 
     if (size < 0 || size >= INT32_MAX - AV_INPUT_BUFFER_PADDING_SIZE) {
-        avctx->extradata = NULL;
-        avctx->extradata_size = 0;
+        par->extradata = NULL;
+        par->extradata_size = 0;
         return AVERROR(EINVAL);
     }
-    avctx->extradata = av_malloc(size + AV_INPUT_BUFFER_PADDING_SIZE);
-    if (avctx->extradata) {
-        memset(avctx->extradata + size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
-        avctx->extradata_size = size;
+    par->extradata = av_malloc(size + AV_INPUT_BUFFER_PADDING_SIZE);
+    if (par->extradata) {
+        memset(par->extradata + size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
+        par->extradata_size = size;
         ret = 0;
     } else {
-        avctx->extradata_size = 0;
+        par->extradata_size = 0;
         ret = AVERROR(ENOMEM);
     }
     return ret;
 }
 
-int ff_get_extradata(AVCodecContext *avctx, AVIOContext *pb, int size)
+int ff_get_extradata(AVCodecParameters *par, AVIOContext *pb, int size)
 {
-    int ret = ff_alloc_extradata(avctx, size);
+    int ret = ff_alloc_extradata(par, size);
     if (ret < 0)
         return ret;
-    ret = avio_read(pb, avctx->extradata, size);
+    ret = avio_read(pb, par->extradata, size);
     if (ret != size) {
-        av_freep(&avctx->extradata);
-        avctx->extradata_size = 0;
-        av_log(avctx, AV_LOG_ERROR, "Failed to read extradata of size %d\n", size);
+        av_freep(&par->extradata);
+        par->extradata_size = 0;
+        av_log(par, AV_LOG_ERROR, "Failed to read extradata of size %d\n", size);
         return ret < 0 ? ret : AVERROR_INVALIDDATA;
     }
 
