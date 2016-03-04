@@ -52,15 +52,9 @@ static int flac_read_header(AVFormatContext *s)
     AVStream *st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
-<<<<<<< HEAD
-    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_id = AV_CODEC_ID_FLAC;
-    st->need_parsing = AVSTREAM_PARSE_FULL_RAW;
-=======
     st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codecpar->codec_id = AV_CODEC_ID_FLAC;
-    st->need_parsing = AVSTREAM_PARSE_FULL;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    st->need_parsing = AVSTREAM_PARSE_FULL_RAW;
     /* the parameters will be extracted from the compressed bitstream */
 
     /* if fLaC marker is not found, assume there is no header */
@@ -254,7 +248,7 @@ static av_unused int64_t flac_read_timestamp(AVFormatContext *s, int stream_inde
         return AV_NOPTS_VALUE;
 
     av_init_packet(&pkt);
-    parser = av_parser_init(st->codec->codec_id);
+    parser = av_parser_init(st->codecpar->codec_id);
     if (!parser){
         return AV_NOPTS_VALUE;
     }
@@ -269,7 +263,7 @@ static av_unused int64_t flac_read_timestamp(AVFormatContext *s, int stream_inde
                 break;
         }
         av_init_packet(&out_pkt);
-        av_parser_parse2(parser, st->codec,
+        av_parser_parse2(parser, st->internal->avctx,
                          &out_pkt.data, &out_pkt.size, pkt.data, pkt.size,
                          pkt.pts, pkt.dts, *ppos);
 
