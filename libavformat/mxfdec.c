@@ -1990,15 +1990,14 @@ static int mxf_parse_structural_metadata(MXFContext *mxf)
 
         /* TODO: drop PictureEssenceCoding and SoundEssenceCompression, only check EssenceContainer */
         codec_ul = mxf_get_codec_ul(ff_mxf_codec_uls, &descriptor->essence_codec_ul);
-<<<<<<< HEAD
-        st->codec->codec_id = (enum AVCodecID)codec_ul->id;
-        if (st->codec->codec_id == AV_CODEC_ID_NONE) {
+        st->codecpar->codec_id = (enum AVCodecID)codec_ul->id;
+        if (st->codecpar->codec_id == AV_CODEC_ID_NONE) {
             codec_ul = mxf_get_codec_ul(ff_mxf_codec_uls, &descriptor->codec_ul);
-            st->codec->codec_id = (enum AVCodecID)codec_ul->id;
+            st->codecpar->codec_id = (enum AVCodecID)codec_ul->id;
         }
 
         av_log(mxf->fc, AV_LOG_VERBOSE, "%s: Universal Label: ",
-               avcodec_get_name(st->codec->codec_id));
+               avcodec_get_name(st->codecpar->codec_id));
         for (k = 0; k < 16; k++) {
             av_log(mxf->fc, AV_LOG_VERBOSE, "%.2x",
                    descriptor->essence_codec_ul[k]);
@@ -2012,25 +2011,14 @@ static int mxf_parse_structural_metadata(MXFContext *mxf)
             av_dict_set(&st->metadata, "file_package_name", source_package->name, 0);
 
         mxf_parse_physical_source_package(mxf, source_track, st);
-=======
-        st->codecpar->codec_id = codec_ul->id;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
         if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             source_track->intra_only = mxf_is_intra_only(descriptor);
             container_ul = mxf_get_codec_ul(mxf_picture_essence_container_uls, essence_container_ul);
-<<<<<<< HEAD
-            if (st->codec->codec_id == AV_CODEC_ID_NONE)
-                st->codec->codec_id = container_ul->id;
-            st->codec->width = descriptor->width;
-            st->codec->height = descriptor->height; /* Field height, not frame height */
-=======
             if (st->codecpar->codec_id == AV_CODEC_ID_NONE)
                 st->codecpar->codec_id = container_ul->id;
             st->codecpar->width = descriptor->width;
-            /* Field height, not frame height */
-            st->codecpar->height = descriptor->height;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            st->codecpar->height = descriptor->height; /* Field height, not frame height */
             switch (descriptor->frame_layout) {
                 case FullFrame:
                     st->codecpar->field_order = AV_FIELD_PROGRESSIVE;
@@ -2044,7 +2032,7 @@ static int mxf_parse_structural_metadata(MXFContext *mxf)
                 case MixedFields:
                     break;
                 case SegmentedFrame:
-                    st->codec->field_order = AV_FIELD_PROGRESSIVE;
+                    st->codecpar->field_order = AV_FIELD_PROGRESSIVE;
                 case SeparateFields:
                     switch (descriptor->field_dominance) {
                     case MXF_TFF:
@@ -2071,29 +2059,18 @@ static int mxf_parse_structural_metadata(MXFContext *mxf)
                 if (st->codecpar->format == AV_PIX_FMT_NONE) {
                     pix_fmt_ul = mxf_get_codec_ul(ff_mxf_pixel_format_uls,
                                                   &descriptor->essence_codec_ul);
-<<<<<<< HEAD
-                    st->codec->pix_fmt = (enum AVPixelFormat)pix_fmt_ul->id;
-                    if (st->codec->pix_fmt == AV_PIX_FMT_NONE) {
-                        st->codec->codec_tag = mxf_get_codec_ul(ff_mxf_codec_tag_uls,
-                                                                &descriptor->essence_codec_ul)->id;
-                        if (!st->codec->codec_tag) {
+                    st->codecpar->format = (enum AVPixelFormat)pix_fmt_ul->id;
+                    if (st->codecpar->format== AV_PIX_FMT_NONE) {
+                        st->codecpar->codec_tag = mxf_get_codec_ul(ff_mxf_codec_tag_uls,
+                                                                   &descriptor->essence_codec_ul)->id;
+                        if (!st->codecpar->codec_tag) {
                             /* support files created before RP224v10 by defaulting to UYVY422
                                if subsampling is 4:2:2 and component depth is 8-bit */
                             if (descriptor->horiz_subsampling == 2 &&
                                 descriptor->vert_subsampling == 1 &&
                                 descriptor->component_depth == 8) {
-                                st->codec->pix_fmt = AV_PIX_FMT_UYVY422;
+                                st->codecpar->format = AV_PIX_FMT_UYVY422;
                             }
-=======
-                    st->codecpar->format = pix_fmt_ul->id;
-                    if (st->codecpar->format == AV_PIX_FMT_NONE) {
-                        /* support files created before RP224v10 by defaulting to UYVY422
-                           if subsampling is 4:2:2 and component depth is 8-bit */
-                        if (descriptor->horiz_subsampling == 2 &&
-                            descriptor->vert_subsampling == 1 &&
-                            descriptor->component_depth == 8) {
-                            st->codecpar->format = AV_PIX_FMT_UYVY422;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
                         }
                     }
                 }
@@ -2105,24 +2082,15 @@ static int mxf_parse_structural_metadata(MXFContext *mxf)
             if (source_track->sequence->origin) {
                 av_dict_set_int(&st->metadata, "source_track_origin", source_track->sequence->origin, 0);
             }
-<<<<<<< HEAD
             if (descriptor->aspect_ratio.num && descriptor->aspect_ratio.den)
                 st->display_aspect_ratio = descriptor->aspect_ratio;
-        } else if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-            container_ul = mxf_get_codec_ul(mxf_sound_essence_container_uls, essence_container_ul);
-            /* Only overwrite existing codec ID if it is unset or A-law, which is the default according to SMPTE RP 224. */
-            if (st->codec->codec_id == AV_CODEC_ID_NONE || (st->codec->codec_id == AV_CODEC_ID_PCM_ALAW && (enum AVCodecID)container_ul->id != AV_CODEC_ID_NONE))
-                st->codec->codec_id = (enum AVCodecID)container_ul->id;
-            st->codec->channels = descriptor->channels;
-            st->codec->bits_per_coded_sample = descriptor->bits_per_sample;
-=======
         } else if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             container_ul = mxf_get_codec_ul(mxf_sound_essence_container_uls, essence_container_ul);
-            if (st->codecpar->codec_id == AV_CODEC_ID_NONE)
-                st->codecpar->codec_id = container_ul->id;
+            /* Only overwrite existing codec ID if it is unset or A-law, which is the default according to SMPTE RP 224. */
+            if (st->codecpar->codec_id == AV_CODEC_ID_NONE || (st->codecpar->codec_id == AV_CODEC_ID_PCM_ALAW && (enum AVCodecID)container_ul->id != AV_CODEC_ID_NONE))
+                st->codecpar->codec_id = (enum AVCodecID)container_ul->id;
             st->codecpar->channels = descriptor->channels;
             st->codecpar->bits_per_coded_sample = descriptor->bits_per_sample;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
             if (descriptor->sample_rate.den > 0) {
                 st->codecpar->sample_rate = descriptor->sample_rate.num / descriptor->sample_rate.den;
@@ -2165,23 +2133,14 @@ static int mxf_parse_structural_metadata(MXFContext *mxf)
             }
         }
         if (descriptor->extradata) {
-<<<<<<< HEAD
-            if (!ff_alloc_extradata(st->codec, descriptor->extradata_size)) {
-                memcpy(st->codec->extradata, descriptor->extradata, descriptor->extradata_size);
+            if (!ff_alloc_extradata(st->codecpar, descriptor->extradata_size)) {
+                memcpy(st->codecpar->extradata, descriptor->extradata, descriptor->extradata_size);
             }
-        } else if (st->codec->codec_id == AV_CODEC_ID_H264) {
+        } else if (st->codecpar->codec_id == AV_CODEC_ID_H264) {
             int coded_width = mxf_get_codec_ul(mxf_intra_only_picture_coded_width,
                                                &descriptor->essence_codec_ul)->id;
             if (coded_width)
-                st->codec->width = coded_width;
-=======
-            st->codecpar->extradata = av_mallocz(descriptor->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
-            if (st->codecpar->extradata) {
-                memcpy(st->codecpar->extradata, descriptor->extradata, descriptor->extradata_size);
-                st->codecpar->extradata_size = descriptor->extradata_size;
-            }
-        } else if (st->codecpar->codec_id == AV_CODEC_ID_H264) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                st->codecpar->width = coded_width;
             ret = ff_generate_avci_extradata(st);
             if (ret < 0)
                 return ret;
@@ -2647,7 +2606,7 @@ static int mxf_handle_missing_index_segment(MXFContext *mxf)
         return 0;
 
     /* TODO: support raw video without a index if they exist */
-    if (s->nb_streams != 1 || s->streams[0]->codec->codec_type != AVMEDIA_TYPE_AUDIO || !is_pcm(s->streams[0]->codec->codec_id))
+    if (s->nb_streams != 1 || s->streams[0]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO || !is_pcm(s->streams[0]->codecpar->codec_id))
         return 0;
 
     /* check if file already has a IndexTableSegment */
@@ -2681,7 +2640,7 @@ static int mxf_handle_missing_index_segment(MXFContext *mxf)
     st = s->streams[0];
     segment->type = IndexTableSegment;
     /* stream will be treated as small EditUnitByteCount */
-    segment->edit_unit_byte_count = (av_get_bits_per_sample(st->codec->codec_id) * st->codec->channels) >> 3;
+    segment->edit_unit_byte_count = (av_get_bits_per_sample(st->codecpar->codec_id) * st->codecpar->channels) >> 3;
     segment->index_start_position = 0;
     segment->index_duration = s->streams[0]->duration;
     segment->index_sid = p->index_sid;
@@ -2967,18 +2926,11 @@ static int mxf_set_audio_pts(MXFContext *mxf, AVCodecParameters *par,
 
     pkt->pts = track->sample_count;
 
-<<<<<<< HEAD
-    if (   codec->channels <= 0
+    if (   par->channels <= 0
         || bits_per_sample <= 0
-        || codec->channels * (int64_t)bits_per_sample < 8)
+        || par->channels * (int64_t)bits_per_sample < 8)
         return AVERROR(EINVAL);
-    track->sample_count += pkt->size / (codec->channels * (int64_t)bits_per_sample / 8);
-=======
-    if (par->channels <= 0 || par->channels * bits_per_sample < 8)
-        return AVERROR_INVALIDDATA;
-
-    track->sample_count += pkt->size / (par->channels * bits_per_sample / 8);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    track->sample_count += pkt->size / (par->channels * (int64_t)bits_per_sample / 8);
     return 0;
 }
 
@@ -3050,11 +3002,7 @@ static int mxf_read_packet_old(AVFormatContext *s, AVPacket *pkt)
             pkt->stream_index = index;
             pkt->pos = klv.offset;
 
-<<<<<<< HEAD
-            codec = st->codec;
-=======
-            par = s->streams[index]->codecpar;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+            par = st->codecpar;
 
             if (par->codec_type == AVMEDIA_TYPE_VIDEO && next_ofs >= 0) {
                 /* mxf->current_edit_unit good - see if we have an
