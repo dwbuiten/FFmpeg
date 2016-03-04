@@ -80,35 +80,22 @@ static int bfi_read_header(AVFormatContext * s)
 
     /*Load the palette to extradata */
     avio_skip(pb, 8);
-<<<<<<< HEAD
-    vstream->codec->extradata      = av_malloc(768);
-    if (!vstream->codec->extradata)
-        return AVERROR(ENOMEM);
-    vstream->codec->extradata_size = 768;
-    avio_read(pb, vstream->codec->extradata,
-               vstream->codec->extradata_size);
-=======
     vstream->codecpar->extradata      = av_malloc(768);
+    if (!vstream->codecpar->extradata)
+        return AVERROR(ENOMEM);
     vstream->codecpar->extradata_size = 768;
     avio_read(pb, vstream->codecpar->extradata,
-              vstream->codecpar->extradata_size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+               vstream->codecpar->extradata_size);
 
     astream->codecpar->sample_rate = avio_rl32(pb);
 
     /* Set up the video codec... */
     avpriv_set_pts_info(vstream, 32, 1, fps);
-<<<<<<< HEAD
-    vstream->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    vstream->codec->codec_id   = AV_CODEC_ID_BFI;
-    vstream->codec->pix_fmt    = AV_PIX_FMT_PAL8;
-    vstream->nb_frames         =
-    vstream->duration          = bfi->nframes;
-=======
     vstream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
     vstream->codecpar->codec_id   = AV_CODEC_ID_BFI;
     vstream->codecpar->format     = AV_PIX_FMT_PAL8;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    vstream->nb_frames            =
+    vstream->duration             = bfi->nframes;
 
     /* Set up the audio codec now... */
     astream->codecpar->codec_type      = AVMEDIA_TYPE_AUDIO;
