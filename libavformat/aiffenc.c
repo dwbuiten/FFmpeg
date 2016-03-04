@@ -102,20 +102,16 @@ static int aiff_write_header(AVFormatContext *s)
 {
     AIFFOutputContext *aiff = s->priv_data;
     AVIOContext *pb = s->pb;
-<<<<<<< HEAD
-    AVCodecContext *enc;
-=======
-    AVCodecParameters *par = s->streams[0]->codecpar;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    AVCodecParameters *par;
     uint64_t sample_rate;
     int i, aifc = 0;
 
     aiff->audio_stream_idx = -1;
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *st = s->streams[i];
-        if (aiff->audio_stream_idx < 0 && st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+        if (aiff->audio_stream_idx < 0 && st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             aiff->audio_stream_idx = i;
-        } else if (st->codec->codec_type != AVMEDIA_TYPE_VIDEO) {
+        } else if (st->codecpar->codec_type != AVMEDIA_TYPE_VIDEO) {
             av_log(s, AV_LOG_ERROR, "AIFF allows only one audio stream and a picture.\n");
             return AVERROR(EINVAL);
         }
@@ -125,7 +121,7 @@ static int aiff_write_header(AVFormatContext *s)
         return AVERROR(EINVAL);
     }
 
-    enc = s->streams[aiff->audio_stream_idx]->codec;
+    par = s->streams[aiff->audio_stream_idx]->codecpar;
 
     /* First verify if format is ok */
     if (!par->codec_tag)
@@ -140,12 +136,7 @@ static int aiff_write_header(AVFormatContext *s)
     ffio_wfourcc(pb, aifc ? "AIFC" : "AIFF");
 
     if (aifc) { // compressed audio
-<<<<<<< HEAD
-        if (!enc->block_align) {
-=======
-        par->bits_per_coded_sample = 16;
         if (!par->block_align) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             av_log(s, AV_LOG_ERROR, "block align not set\n");
             return -1;
         }
@@ -155,10 +146,10 @@ static int aiff_write_header(AVFormatContext *s)
         avio_wb32(pb, 0xA2805140);
     }
 
-    if (enc->channels > 2 && enc->channel_layout) {
+    if (par->channels > 2 && par->channel_layout) {
         ffio_wfourcc(pb, "CHAN");
         avio_wb32(pb, 12);
-        ff_mov_write_chan(pb, enc->channel_layout);
+        ff_mov_write_chan(pb, par->channel_layout);
     }
 
     put_meta(s, "title",     MKTAG('N', 'A', 'M', 'E'));
@@ -194,10 +185,10 @@ static int aiff_write_header(AVFormatContext *s)
         avio_wb16(pb, 0);
     }
 
-    if (enc->codec_tag == MKTAG('Q','D','M','2') && enc->extradata_size) {
+    if (par->codec_tag == MKTAG('Q','D','M','2') && par->extradata_size) {
         ffio_wfourcc(pb, "wave");
-        avio_wb32(pb, enc->extradata_size);
-        avio_write(pb, enc->extradata, enc->extradata_size);
+        avio_wb32(pb, par->extradata_size);
+        avio_write(pb, par->extradata, par->extradata_size);
     }
 
     /* Sound data chunk */
@@ -207,12 +198,8 @@ static int aiff_write_header(AVFormatContext *s)
     avio_wb32(pb, 0);                    /* Data offset */
     avio_wb32(pb, 0);                    /* Block-size (block align) */
 
-<<<<<<< HEAD
     avpriv_set_pts_info(s->streams[aiff->audio_stream_idx], 64, 1,
-                        s->streams[aiff->audio_stream_idx]->codec->sample_rate);
-=======
-    avpriv_set_pts_info(s->streams[0], 64, 1, s->streams[0]->codecpar->sample_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                        s->streams[aiff->audio_stream_idx]->codecpar->sample_rate);
 
     /* Data is starting here */
     avio_flush(pb);
@@ -230,7 +217,7 @@ static int aiff_write_packet(AVFormatContext *s, AVPacket *pkt)
         int ret;
         AVPacketList *pict_list, *last;
 
-        if (s->streams[pkt->stream_index]->codec->codec_type != AVMEDIA_TYPE_VIDEO)
+        if (s->streams[pkt->stream_index]->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
             return 0;
 
         /* warn only once for each stream */
@@ -268,12 +255,8 @@ static int aiff_write_trailer(AVFormatContext *s)
     int ret;
     AVIOContext *pb = s->pb;
     AIFFOutputContext *aiff = s->priv_data;
-<<<<<<< HEAD
     AVPacketList *pict_list = aiff->pict_list;
-    AVCodecContext *enc = s->streams[aiff->audio_stream_idx]->codec;
-=======
-    AVCodecParameters *par = s->streams[0]->codecpar;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    AVCodecParameters *par = s->streams[aiff->audio_stream_idx]->codecpar;
 
     /* Chunks sizes must be even */
     int64_t file_size, end_size;
