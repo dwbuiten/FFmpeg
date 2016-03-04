@@ -597,7 +597,7 @@ int ff_standardize_creation_time(AVFormatContext *s);
  *         non-zero if a new packet was allocated and ppkt has to be freed
  *         CONTAINS_PAL if in addition to a new packet the old contained a palette
  */
-int ff_reshuffle_raw_rgb(AVFormatContext *s, AVPacket **ppkt, AVCodecContext *enc, int expected_stride);
+int ff_reshuffle_raw_rgb(AVFormatContext *s, AVPacket **ppkt, AVCodecParameters *par, int expected_stride);
 
 /**
  * Retrieves the palette from a packet, either from side data, or
