@@ -54,7 +54,7 @@ static int voc_read_header(AVFormatContext *s)
     st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
-    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
+    st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
 
     voc->remaining_size = 0;
     return 0;
@@ -62,15 +62,6 @@ static int voc_read_header(AVFormatContext *s)
 
 static int voc_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
-<<<<<<< HEAD
-=======
-    if (!s->nb_streams) {
-        AVStream *st = avformat_new_stream(s, NULL);
-        if (!st)
-            return AVERROR(ENOMEM);
-        st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
-    }
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     return ff_voc_get_packet(s, pkt, s->streams[0], 0);
 }
 

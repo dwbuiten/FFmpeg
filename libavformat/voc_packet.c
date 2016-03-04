@@ -121,11 +121,7 @@ ff_voc_get_packet(AVFormatContext *s, AVPacket *pkt, AVStream *st, int max_size)
         }
     }
 
-<<<<<<< HEAD
-    dec->bit_rate = dec->sample_rate * dec->channels * dec->bits_per_coded_sample;
-=======
-    par->bit_rate = par->sample_rate * par->bits_per_coded_sample;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    par->bit_rate = par->sample_rate * par->channels * par->bits_per_coded_sample;
 
     if (max_size <= 0)
         max_size = 2048;
@@ -135,7 +131,7 @@ ff_voc_get_packet(AVFormatContext *s, AVPacket *pkt, AVStream *st, int max_size)
     ret = av_get_packet(pb, pkt, size);
     pkt->dts = pkt->pts = voc->pts;
 
-    duration = av_get_audio_frame_duration(st->codec, size);
+    duration = av_get_audio_frame_duration2(st->codecpar, size);
     if (duration > 0 && voc->pts != AV_NOPTS_VALUE)
         voc->pts += duration;
     else

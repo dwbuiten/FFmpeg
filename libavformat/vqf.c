@@ -135,16 +135,12 @@ static int vqf_read_header(AVFormatContext *s)
             rate_flag           = AV_RB32(comm_chunk + 8);
             avio_skip(s->pb, len-12);
 
-<<<<<<< HEAD
-            if (st->codec->channels <= 0) {
+            if (st->codecpar->channels <= 0) {
                 av_log(s, AV_LOG_ERROR, "Invalid number of channels\n");
                 return AVERROR_INVALIDDATA;
             }
 
-            st->codec->bit_rate              = read_bitrate*1000;
-=======
             st->codecpar->bit_rate = read_bitrate * 1000;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
             break;
         case MKTAG('D','S','I','Z'): // size of compressed data
         {
@@ -215,29 +211,17 @@ static int vqf_read_header(AVFormatContext *s)
         size = 2048;
         break;
     default:
-<<<<<<< HEAD
         av_log(s, AV_LOG_ERROR, "Mode not supported: %d Hz, %"PRId64" kb/s.\n",
-               st->codec->sample_rate, (int64_t)st->codec->bit_rate);
-=======
-        av_log(s, AV_LOG_ERROR, "Mode not suported: %d Hz, %d kb/s.\n",
-               st->codecpar->sample_rate, st->codecpar->bit_rate);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+               st->codecpar->sample_rate, (int64_t)st->codecpar->bit_rate);
         return -1;
     }
     c->frame_bit_len = st->codecpar->bit_rate*size/st->codecpar->sample_rate;
     avpriv_set_pts_info(st, 64, size, st->codecpar->sample_rate);
 
     /* put first 12 bytes of COMM chunk in extradata */
-<<<<<<< HEAD
-    if (ff_alloc_extradata(st->codec, 12))
+    if (ff_alloc_extradata(st->codecpar, 12))
         return AVERROR(ENOMEM);
-    memcpy(st->codec->extradata, comm_chunk, 12);
-=======
-    if (!(st->codecpar->extradata = av_malloc(12 + AV_INPUT_BUFFER_PADDING_SIZE)))
-        return AVERROR(ENOMEM);
-    st->codecpar->extradata_size = 12;
     memcpy(st->codecpar->extradata, comm_chunk, 12);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     ff_metadata_conv_ctx(s, NULL, vqf_metadata_conv);
 

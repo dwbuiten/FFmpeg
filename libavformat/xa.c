@@ -84,16 +84,11 @@ static int xa_read_header(AVFormatContext *s)
     avio_skip(pb, 2);       /* Skip block align */
     avio_skip(pb, 2);       /* Skip bits-per-sample */
 
-<<<<<<< HEAD
-    if (!st->codec->channels || !st->codec->sample_rate)
+    if (!st->codecpar->channels || !st->codecpar->sample_rate)
         return AVERROR_INVALIDDATA;
 
-    st->codec->bit_rate = av_clip(15LL * st->codec->channels * 8 *
-                                  st->codec->sample_rate / 28, 0, INT_MAX);
-=======
     st->codecpar->bit_rate = av_clip(15LL * st->codecpar->channels * 8 *
-                                     st->codecpar->sample_rate / 28, 0, INT_MAX);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                                  st->codecpar->sample_rate / 28, 0, INT_MAX);
 
     avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
     st->start_time = 0;

@@ -447,9 +447,8 @@ static void get_attachment(AVFormatContext *s, AVIOContext *pb, int length)
     if (!st)
         goto done;
     av_dict_set(&st->metadata, "title", description, 0);
-<<<<<<< HEAD:libavformat/wtvdec.c
-    st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    st->codec->codec_id   = AV_CODEC_ID_MJPEG;
+    st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+    st->codecpar->codec_id   = AV_CODEC_ID_MJPEG;
     st->id = -1;
     ret = av_get_packet(pb, &st->attached_pic, filesize);
     if (ret < 0)
@@ -457,16 +456,6 @@ static void get_attachment(AVFormatContext *s, AVIOContext *pb, int length)
     st->attached_pic.stream_index = st->index;
     st->attached_pic.flags       |= AV_PKT_FLAG_KEY;
     st->disposition              |= AV_DISPOSITION_ATTACHED_PIC;
-=======
-    st->codecpar->codec_id   = AV_CODEC_ID_MJPEG;
-    st->codecpar->codec_type = AVMEDIA_TYPE_ATTACHMENT;
-    st->codecpar->extradata  = av_mallocz(filesize);
-    st->id = -1;
-    if (!st->codecpar->extradata)
-        goto done;
-    st->codecpar->extradata_size = filesize;
-    avio_read(pb, st->codecpar->extradata, filesize);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf:libavformat/wtv.c
 done:
     avio_seek(pb, pos + length, SEEK_SET);
 }
@@ -576,7 +565,7 @@ static int parse_videoinfoheader2(AVFormatContext *s, AVStream *st)
     AVIOContext *pb = wtv->pb;
 
     avio_skip(pb, 72);  // picture aspect ratio is unreliable
-    st->codec->codec_tag = ff_get_bmp_header(pb, st, NULL);
+    st->codecpar->codec_tag = ff_get_bmp_header(pb, st, NULL);
 
     return 72 + 40;
 }
@@ -676,13 +665,8 @@ static AVStream * parse_media_type(AVFormatContext *s, AVStream *st, int sid,
         st = new_stream(s, st, sid, AVMEDIA_TYPE_AUDIO);
         if (!st)
             return NULL;
-<<<<<<< HEAD:libavformat/wtvdec.c
         if (!ff_guidcmp(formattype, ff_format_waveformatex)) {
-            int ret = ff_get_wav_header(s, pb, st->codec, size, 0);
-=======
-        if (!ff_guidcmp(formattype, format_waveformatex)) {
-            int ret = ff_get_wav_header(s, pb, st->codecpar, size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf:libavformat/wtv.c
+            int ret = ff_get_wav_header(s, pb, st->codecpar, size, 0);
             if (ret < 0)
                 return NULL;
         } else {
@@ -724,11 +708,7 @@ static AVStream * parse_media_type(AVFormatContext *s, AVStream *st, int sid,
         if (!memcmp(subtype + 4, (const uint8_t[]){FF_MEDIASUBTYPE_BASE_GUID}, 12)) {
             st->codecpar->codec_id = ff_codec_get_id(ff_codec_bmp_tags, AV_RL32(subtype));
         } else {
-<<<<<<< HEAD:libavformat/wtvdec.c
-            st->codec->codec_id = ff_codec_guid_get_id(ff_video_guids, subtype);
-=======
-            st->codecpar->codec_id = ff_codec_guid_get_id(video_guids, subtype);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf:libavformat/wtv.c
+            st->codecpar->codec_id = ff_codec_guid_get_id(ff_video_guids, subtype);
         }
         if (st->codecpar->codec_id == AV_CODEC_ID_NONE)
             av_log(s, AV_LOG_WARNING, "unknown subtype:"FF_PRI_GUID"\n", FF_ARG_GUID(subtype));
@@ -751,11 +731,7 @@ static AVStream * parse_media_type(AVFormatContext *s, AVStream *st, int sid,
         if (ff_guidcmp(formattype, ff_format_none))
             av_log(s, AV_LOG_WARNING, "unknown formattype:"FF_PRI_GUID"\n", FF_ARG_GUID(formattype));
         avio_skip(pb, size);
-<<<<<<< HEAD:libavformat/wtvdec.c
-        st->codec->codec_id = !ff_guidcmp(subtype, mediasubtype_teletext) ? AV_CODEC_ID_DVB_TELETEXT : AV_CODEC_ID_EIA_608;
-=======
-        st->codecpar->codec_id   = AV_CODEC_ID_DVB_TELETEXT;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf:libavformat/wtv.c
+        st->codecpar->codec_id = !ff_guidcmp(subtype, mediasubtype_teletext) ? AV_CODEC_ID_DVB_TELETEXT : AV_CODEC_ID_EIA_608;
         return st;
     } else if (!ff_guidcmp(mediatype, mediatype_mpeg2_sections) &&
                !ff_guidcmp(subtype, mediasubtype_mpeg2_sections)) {

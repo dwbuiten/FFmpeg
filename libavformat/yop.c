@@ -69,17 +69,14 @@ static int yop_read_header(AVFormatContext *s)
         return AVERROR(ENOMEM);
 
     // Extra data that will be passed to the decoder
-<<<<<<< HEAD
-    if (ff_alloc_extradata(video_stream->codec, 8))
+    if (ff_alloc_extradata(video_stream->codecpar, 8))
         return AVERROR(ENOMEM);
-=======
 
     video_stream->codecpar->extradata = av_mallocz(8 + AV_INPUT_BUFFER_PADDING_SIZE);
 
     if (!video_stream->codecpar->extradata)
         return AVERROR(ENOMEM);
     video_stream->codecpar->extradata_size = 8;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     // Audio
     audio_par                 = audio_stream->codecpar;
@@ -110,7 +107,7 @@ static int yop_read_header(AVFormatContext *s)
     yop->palette_size       = video_par->extradata[0] * 3 + 4;
     yop->audio_block_length = AV_RL16(video_par->extradata + 6);
 
-    video_dec->bit_rate     = 8 * (yop->frame_size - yop->audio_block_length) * frame_rate;
+    video_par->bit_rate     = 8 * (yop->frame_size - yop->audio_block_length) * frame_rate;
 
     // 1840 samples per frame, 1 nibble per sample; hence 1840/2 = 920
     if (yop->audio_block_length < 920 ||

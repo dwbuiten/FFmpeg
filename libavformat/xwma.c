@@ -75,11 +75,7 @@ static int xwma_read_header(AVFormatContext *s)
     if (!st)
         return AVERROR(ENOMEM);
 
-<<<<<<< HEAD
-    ret = ff_get_wav_header(s, pb, st->codec, size, 0);
-=======
-    ret = ff_get_wav_header(s, pb, st->codecpar, size);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    ret = ff_get_wav_header(s, pb, st->codecpar, size, 0);
     if (ret < 0)
         return ret;
     st->need_parsing = AVSTREAM_PARSE_NONE;
@@ -89,12 +85,8 @@ static int xwma_read_header(AVFormatContext *s)
      * extradata for that. Thus, ask the user for feedback, but try to go on
      * anyway.
      */
-<<<<<<< HEAD
-    if (st->codec->codec_id != AV_CODEC_ID_WMAV2 &&
-        st->codec->codec_id != AV_CODEC_ID_WMAPRO) {
-=======
-    if (st->codecpar->codec_id != AV_CODEC_ID_WMAV2) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+    if (st->codecpar->codec_id != AV_CODEC_ID_WMAV2 &&
+        st->codecpar->codec_id != AV_CODEC_ID_WMAPRO) {
         avpriv_request_sample(s, "Unexpected codec (tag 0x04%x; id %d)",
                               st->codecpar->codec_tag, st->codecpar->codec_id);
     } else {
@@ -111,27 +103,19 @@ static int xwma_read_header(AVFormatContext *s)
              * the user for a sample.
              */
             avpriv_request_sample(s, "Unexpected extradata (%d bytes)",
-<<<<<<< HEAD
-                                  st->codec->extradata_size);
-        } else if (st->codec->codec_id == AV_CODEC_ID_WMAPRO) {
-            if (ff_alloc_extradata(st->codec, 18))
-                return AVERROR(ENOMEM);
-
-            memset(st->codec->extradata, 0, st->codec->extradata_size);
-            st->codec->extradata[ 0] = st->codec->bits_per_coded_sample;
-            st->codec->extradata[14] = 224;
-        } else {
-            if (ff_alloc_extradata(st->codec, 6))
-=======
                                   st->codecpar->extradata_size);
-        } else {
-            st->codecpar->extradata_size = 6;
-            st->codecpar->extradata      = av_mallocz(6 + AV_INPUT_BUFFER_PADDING_SIZE);
-            if (!st->codecpar->extradata)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        } else if (st->codecpar->codec_id == AV_CODEC_ID_WMAPRO) {
+            if (ff_alloc_extradata(st->codecpar, 18))
                 return AVERROR(ENOMEM);
 
-            memset(st->codec->extradata, 0, st->codec->extradata_size);
+            memset(st->codecpar->extradata, 0, st->codecpar->extradata_size);
+            st->codecpar->extradata[ 0] = st->codecpar->bits_per_coded_sample;
+            st->codecpar->extradata[14] = 224;
+        } else {
+            if (ff_alloc_extradata(st->codecpar, 6))
+                return AVERROR(ENOMEM);
+
+            memset(st->codecpar->extradata, 0, st->codecpar->extradata_size);
             /* setup extradata with our experimentally obtained value */
             st->codecpar->extradata[4] = 31;
         }

@@ -231,25 +231,14 @@ static int xmv_read_header(AVFormatContext *s)
             goto fail;
         }
 
-<<<<<<< HEAD
-        ast->codec->codec_type            = AVMEDIA_TYPE_AUDIO;
-        ast->codec->codec_id              = packet->codec_id;
-        ast->codec->codec_tag             = packet->compression;
-        ast->codec->channels              = packet->channels;
-        ast->codec->sample_rate           = packet->sample_rate;
-        ast->codec->bits_per_coded_sample = packet->bits_per_sample;
-        ast->codec->bit_rate              = packet->bit_rate;
-        ast->codec->block_align           = 36 * packet->channels;
-=======
         ast->codecpar->codec_type            = AVMEDIA_TYPE_AUDIO;
-        ast->codecpar->codec_id              = track->codec_id;
-        ast->codecpar->codec_tag             = track->compression;
-        ast->codecpar->channels              = track->channels;
-        ast->codecpar->sample_rate           = track->sample_rate;
-        ast->codecpar->bits_per_coded_sample = track->bits_per_sample;
-        ast->codecpar->bit_rate              = track->bit_rate;
-        ast->codecpar->block_align           = 36 * track->channels;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        ast->codecpar->codec_id              = packet->codec_id;
+        ast->codecpar->codec_tag             = packet->compression;
+        ast->codecpar->channels              = packet->channels;
+        ast->codecpar->sample_rate           = packet->sample_rate;
+        ast->codecpar->bits_per_coded_sample = packet->bits_per_sample;
+        ast->codecpar->bit_rate              = packet->bit_rate;
+        ast->codecpar->block_align           = 36 * packet->channels;
 
         avpriv_set_pts_info(ast, 32, packet->block_samples, packet->sample_rate);
 
@@ -392,20 +381,11 @@ static int xmv_process_packet_header(AVFormatContext *s)
 
                 av_assert0(xmv->video.stream_index < s->nb_streams);
 
-<<<<<<< HEAD
-                if (vst->codec->extradata_size < 4) {
-                    av_freep(&vst->codec->extradata);
-
-                    if ((ret = ff_alloc_extradata(vst->codec, 4)) < 0)
-                        return ret;
-=======
                 if (vst->codecpar->extradata_size < 4) {
-                    av_free(vst->codecpar->extradata);
+                    av_freep(&vst->codecpar->extradata);
 
-                    vst->codecpar->extradata =
-                        av_malloc(4 + AV_INPUT_BUFFER_PADDING_SIZE);
-                    vst->codecpar->extradata_size = 4;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                    if ((ret = ff_alloc_extradata(vst->codecpar, 4)) < 0)
+                        return ret;
                 }
 
                 memcpy(vst->codecpar->extradata, xmv->video.extradata, 4);

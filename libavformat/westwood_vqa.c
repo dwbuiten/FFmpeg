@@ -101,23 +101,11 @@ static int wsvqa_read_header(AVFormatContext *s)
     avio_seek(pb, 20, SEEK_SET);
 
     /* the VQA header needs to go to the decoder */
-<<<<<<< HEAD
-    if (ff_get_extradata(st->codec, pb, VQA_HEADER_SIZE) < 0)
+    if (ff_get_extradata(st->codecpar, pb, VQA_HEADER_SIZE) < 0)
         return AVERROR(ENOMEM);
-    header = st->codec->extradata;
-    st->codec->width = AV_RL16(&header[6]);
-    st->codec->height = AV_RL16(&header[8]);
-=======
-    st->codecpar->extradata_size = VQA_HEADER_SIZE;
-    st->codecpar->extradata = av_mallocz(VQA_HEADER_SIZE + AV_INPUT_BUFFER_PADDING_SIZE);
-    header = (unsigned char *)st->codecpar->extradata;
-    if (avio_read(pb, st->codecpar->extradata, VQA_HEADER_SIZE) !=
-        VQA_HEADER_SIZE) {
-        return AVERROR(EIO);
-    }
+    header = st->codecpar->extradata;
     st->codecpar->width = AV_RL16(&header[6]);
     st->codecpar->height = AV_RL16(&header[8]);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
     fps = header[12];
     st->nb_frames =
     st->duration  = AV_RL16(&header[4]);
@@ -226,15 +214,8 @@ static int wsvqa_read_packet(AVFormatContext *s,
                         st->codecpar->codec_id = AV_CODEC_ID_WESTWOOD_SND1;
                         break;
                     case SND2_TAG:
-<<<<<<< HEAD
-                        st->codec->codec_id = AV_CODEC_ID_ADPCM_IMA_WS;
-                        if (ff_alloc_extradata(st->codec, 2))
-=======
                         st->codecpar->codec_id = AV_CODEC_ID_ADPCM_IMA_WS;
-                        st->codecpar->extradata_size = 2;
-                        st->codecpar->extradata = av_mallocz(2 + AV_INPUT_BUFFER_PADDING_SIZE);
-                        if (!st->codecpar->extradata)
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+                        if (ff_alloc_extradata(st->codecpar, 2))
                             return AVERROR(ENOMEM);
                         AV_WL16(st->codecpar->extradata, wsvqa->version);
                         break;

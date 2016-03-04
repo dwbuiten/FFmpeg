@@ -30,7 +30,7 @@ typedef struct voc_enc_context {
 static int voc_write_header(AVFormatContext *s)
 {
     AVIOContext *pb = s->pb;
-    AVCodecContext *enc = s->streams[0]->codec;
+    AVCodecParameters *par = s->streams[0]->codecpar;
     const int header_size = 26;
     const int version = 0x0114;
 
@@ -38,7 +38,7 @@ static int voc_write_header(AVFormatContext *s)
         || s->streams[0]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
         return AVERROR_PATCHWELCOME;
 
-    if (!enc->codec_tag && enc->codec_id != AV_CODEC_ID_PCM_U8) {
+    if (!par->codec_tag && par->codec_id != AV_CODEC_ID_PCM_U8) {
         av_log(s, AV_LOG_ERROR, "unsupported codec\n");
         return AVERROR(EINVAL);
     }
@@ -58,11 +58,7 @@ static int voc_write_packet(AVFormatContext *s, AVPacket *pkt)
     AVIOContext *pb = s->pb;
 
     if (!voc->param_written) {
-<<<<<<< HEAD
-        if (enc->codec_tag > 3) {
-=======
-        if (par->codec_tag > 0xFF) {
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
+        if (par->codec_tag > 3) {
             avio_w8(pb, VOC_TYPE_NEW_VOICE_DATA);
             avio_wl24(pb, pkt->size + 12);
             avio_wl32(pb, par->sample_rate);
@@ -74,25 +70,14 @@ static int voc_write_packet(AVFormatContext *s, AVPacket *pkt)
             if (s->streams[0]->codecpar->channels > 1) {
                 avio_w8(pb, VOC_TYPE_EXTENDED);
                 avio_wl24(pb, 4);
-<<<<<<< HEAD
-                avio_wl16(pb, 65536-(256000000 + enc->sample_rate*enc->channels/2)/(enc->sample_rate*enc->channels));
-                avio_w8(pb, enc->codec_tag);
-                avio_w8(pb, enc->channels - 1);
-            }
-            avio_w8(pb, VOC_TYPE_VOICE_DATA);
-            avio_wl24(pb, pkt->size + 2);
-            avio_w8(pb, 256 - (1000000 + enc->sample_rate/2) / enc->sample_rate);
-            avio_w8(pb, enc->codec_tag);
-=======
-                avio_wl16(pb, 65536-256000000/(par->sample_rate*par->channels));
+                avio_wl16(pb, 65536-(256000000 + par->sample_rate*par->channels/2)/(par->sample_rate*par->channels));
                 avio_w8(pb, par->codec_tag);
                 avio_w8(pb, par->channels - 1);
             }
             avio_w8(pb, VOC_TYPE_VOICE_DATA);
             avio_wl24(pb, pkt->size + 2);
-            avio_w8(pb, 256 - 1000000 / par->sample_rate);
+            avio_w8(pb, 256 - (1000000 + par->sample_rate/2) / par->sample_rate);
             avio_w8(pb, par->codec_tag);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         }
         voc->param_written = 1;
     } else {
