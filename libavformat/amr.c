@@ -142,16 +142,11 @@ static int amr_read_packet(AVFormatContext *s, AVPacket *pkt)
     if (!size || av_new_packet(pkt, size))
         return AVERROR(EIO);
 
-<<<<<<< HEAD
     if (amr->cumulated_size < UINT64_MAX - size) {
         amr->cumulated_size += size;
         /* Both AMR formats have 50 frames per second */
-        s->streams[0]->codec->bit_rate = amr->cumulated_size / ++amr->block_count * 8 * 50;
+        s->streams[0]->codecpar->bit_rate = amr->cumulated_size / ++amr->block_count * 8 * 50;
     }
-=======
-    /* Both AMR formats have 50 frames per second */
-    s->streams[0]->codecpar->bit_rate = size*8*50;
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     pkt->stream_index = 0;
     pkt->pos          = pos;
