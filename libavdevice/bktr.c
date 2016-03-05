@@ -289,8 +289,8 @@ static int grab_read_header(AVFormatContext *s1)
     st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codecpar->format = AV_PIX_FMT_YUV420P;
     st->codecpar->codec_id = AV_CODEC_ID_RAWVIDEO;
-    st->codecpar->width = width;
-    st->codecpar->height = height;
+    st->codecpar->width = s->width;
+    st->codecpar->height = s->height;
     st->avg_frame_rate = framerate;
 
     if (bktr_init(s1->filename, s->width, s->height, s->standard,
