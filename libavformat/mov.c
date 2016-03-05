@@ -750,7 +750,7 @@ static int mov_read_dac3(MOVContext *c, AVIOContext *pb, MOVAtom atom)
 
 #if FF_API_LAVF_AVCTX
     FF_DISABLE_DEPRECATION_WARNINGS
-    st->codecpar->audio_service_type = *ast;
+    st->codec->audio_service_type = *ast;
     FF_ENABLE_DEPRECATION_WARNINGS
 #endif
 
@@ -790,7 +790,7 @@ static int mov_read_dec3(MOVContext *c, AVIOContext *pb, MOVAtom atom)
 
 #if FF_API_LAVF_AVCTX
     FF_DISABLE_DEPRECATION_WARNINGS
-    st->codecpar->audio_service_type = *ast;
+    st->codec->audio_service_type = *ast;
     FF_ENABLE_DEPRECATION_WARNINGS
 #endif
 
