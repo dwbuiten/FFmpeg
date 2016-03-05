@@ -104,7 +104,6 @@ static int vmd_read_header(AVFormatContext *s)
     if (avio_read(pb, vmd->vmd_header, VMD_HEADER_SIZE) != VMD_HEADER_SIZE)
         return AVERROR(EIO);
 
-<<<<<<< HEAD
     width = AV_RL16(&vmd->vmd_header[12]);
     height = AV_RL16(&vmd->vmd_header[14]);
     if (width && height) {
@@ -119,43 +118,19 @@ static int vmd_read_header(AVFormatContext *s)
             return AVERROR(ENOMEM);
         avpriv_set_pts_info(vst, 33, 1, 10);
         vmd->video_stream_index = vst->index;
-        vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-        vst->codec->codec_id = vmd->is_indeo3 ? AV_CODEC_ID_INDEO3 : AV_CODEC_ID_VMDVIDEO;
-        vst->codec->codec_tag = 0;  /* no fourcc */
-        vst->codec->width = width;
-        vst->codec->height = height;
-        if(vmd->is_indeo3 && vst->codec->width > 320){
-            vst->codec->width >>= 1;
-            vst->codec->height >>= 1;
+        vst->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+        vst->codecpar->codec_id = vmd->is_indeo3 ? AV_CODEC_ID_INDEO3 : AV_CODEC_ID_VMDVIDEO;
+        vst->codecpar->codec_tag = 0;  /* no fourcc */
+        vst->codecpar->width = width;
+        vst->codecpar->height = height;
+        if(vmd->is_indeo3 && vst->codecpar->width > 320){
+            vst->codecpar->width >>= 1;
+            vst->codecpar->height >>= 1;
         }
-        if (ff_alloc_extradata(vst->codec, VMD_HEADER_SIZE))
+        if (ff_alloc_extradata(vst->codecpar, VMD_HEADER_SIZE))
             return AVERROR(ENOMEM);
-        memcpy(vst->codec->extradata, vmd->vmd_header, VMD_HEADER_SIZE);
+        memcpy(vst->codecpar->extradata, vmd->vmd_header, VMD_HEADER_SIZE);
     }
-=======
-    if(vmd->vmd_header[24] == 'i' && vmd->vmd_header[25] == 'v' && vmd->vmd_header[26] == '3')
-        vmd->is_indeo3 = 1;
-    else
-        vmd->is_indeo3 = 0;
-    /* start up the decoders */
-    vst = avformat_new_stream(s, NULL);
-    if (!vst)
-        return AVERROR(ENOMEM);
-    avpriv_set_pts_info(vst, 33, 1, 10);
-    vmd->video_stream_index = vst->index;
-    vst->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
-    vst->codecpar->codec_id   = vmd->is_indeo3 ? AV_CODEC_ID_INDEO3 : AV_CODEC_ID_VMDVIDEO;
-    vst->codecpar->codec_tag  = 0;  /* no fourcc */
-    vst->codecpar->width      = AV_RL16(&vmd->vmd_header[12]);
-    vst->codecpar->height     = AV_RL16(&vmd->vmd_header[14]);
-    if(vmd->is_indeo3 && vst->codecpar->width > 320){
-        vst->codecpar->width >>= 1;
-        vst->codecpar->height >>= 1;
-    }
-    vst->codecpar->extradata_size = VMD_HEADER_SIZE;
-    vst->codecpar->extradata = av_mallocz(VMD_HEADER_SIZE + AV_INPUT_BUFFER_PADDING_SIZE);
-    memcpy(vst->codecpar->extradata, vmd->vmd_header, VMD_HEADER_SIZE);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
 
     /* if sample rate is 0, assume no audio */
     vmd->sample_rate = AV_RL16(&vmd->vmd_header[804]);
@@ -186,18 +161,11 @@ static int vmd_read_header(AVFormatContext *s)
             st->codecpar->bits_per_coded_sample * st->codecpar->channels;
 
         /* calculate pts */
-<<<<<<< HEAD
-        num = st->codec->block_align;
-        den = st->codec->sample_rate * st->codec->channels;
+        num = st->codecpar->block_align;
+        den = st->codecpar->sample_rate * st->codecpar->channels;
         av_reduce(&num, &den, num, den, (1UL<<31)-1);
         if (vst)
             avpriv_set_pts_info(vst, 33, num, den);
-=======
-        num = st->codecpar->block_align;
-        den = st->codecpar->sample_rate * st->codecpar->channels;
-        av_reduce(&den, &num, den, num, (1UL<<31)-1);
-        avpriv_set_pts_info(vst, 33, num, den);
->>>>>>> 9200514ad8717c63f82101dc394f4378854325bf
         avpriv_set_pts_info(st, 33, num, den);
     }
 
