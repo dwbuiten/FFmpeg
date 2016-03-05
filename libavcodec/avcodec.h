@@ -3895,7 +3895,7 @@ typedef struct AVCodecParameters {
      */
     int trailing_padding;
     /**
-     * Number of samples to skip after a discontinuity
+     * Audio only. Number of samples to skip after a discontinuity.
      */
     int seek_preroll;
 } AVCodecParameters;
