@@ -266,6 +266,8 @@ void ff_parse_specific_params(AVStream *st, int *au_rate,
     int audio_frame_size;
 
     audio_frame_size = av_get_audio_frame_duration2(par, 0);
+    if (!audio_frame_size)
+        audio_frame_size = par->frame_size;
 
     *au_ssize = par->block_align;
     if (audio_frame_size && par->sample_rate) {

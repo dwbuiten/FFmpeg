@@ -86,7 +86,7 @@ static int read_header(AVFormatContext *s)
         return AVERROR_INVALIDDATA;
     }
 
-    st->codec->frame_size=80;
+    st->codecpar->frame_size=80;
     st->codecpar->channels=1;
     avpriv_set_pts_info(st, 64, 1, 100);
 
@@ -97,7 +97,7 @@ static int read_header(AVFormatContext *s)
     sec=avio_r8(pb);
     min=avio_rl32(pb);
 
-    st->duration = av_rescale(1000*(min*60+sec)+msec, st->codecpar->sample_rate, 1000 * 80);
+    st->duration = av_rescale(1000*(min*60+sec)+msec, st->codecpar->sample_rate, 1000 * st->codecpar->frame_size);
 
     ctx->bytes_left_in_chunk=CHUNK_SIZE;
 

@@ -974,7 +974,7 @@ static int mov_write_audio_tag(AVFormatContext *s, AVIOContext *pb, MOVMuxContex
             mov_pcm_be_gt16(track->par->codec_id))
             avio_wb32(pb, 1); /*  must be 1 for  uncompressed formats */
         else
-            avio_wb32(pb, track->st->codec->frame_size); /* Samples per packet */
+            avio_wb32(pb, track->par->frame_size); /* Samples per packet */
         avio_wb32(pb, track->sample_size / track->par->channels); /* Bytes per packet */
         avio_wb32(pb, track->sample_size); /* Bytes per frame */
         avio_wb32(pb, 2); /* Bytes per sample */
@@ -4423,7 +4423,7 @@ int ff_mov_write_packet(AVFormatContext *s, AVPacket *pkt)
         }
     } else if (par->codec_id == AV_CODEC_ID_ADPCM_MS ||
                par->codec_id == AV_CODEC_ID_ADPCM_IMA_WAV) {
-        samples_in_chunk = trk->st->codec->frame_size;
+        samples_in_chunk = trk->par->frame_size;
     } else if (trk->sample_size)
         samples_in_chunk = size / trk->sample_size;
     else
@@ -5312,7 +5312,7 @@ static int mov_write_header(AVFormatContext *s)
             }
         } else if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             track->timescale = st->codecpar->sample_rate;
-            if (!st->codec->frame_size && !av_get_bits_per_sample(st->codecpar->codec_id)) {
+            if (!st->codecpar->frame_size && !av_get_bits_per_sample(st->codecpar->codec_id)) {
                 av_log(s, AV_LOG_WARNING, "track %d: codec frame size is not set\n", i);
                 track->audio_vbr = 1;
             }else if (st->codecpar->codec_id == AV_CODEC_ID_ADPCM_MS ||
@@ -5324,7 +5324,7 @@ static int mov_write_header(AVFormatContext *s)
                     goto error;
                 }
                 track->sample_size = st->codecpar->block_align;
-            }else if (st->codec->frame_size > 1){ /* assume compressed audio */
+            }else if (st->codecpar->frame_size > 1){ /* assume compressed audio */
                 track->audio_vbr = 1;
             }else{
                 track->sample_size = (av_get_bits_per_sample(st->codecpar->codec_id) >> 3) * st->codecpar->channels;
