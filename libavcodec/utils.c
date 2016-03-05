@@ -3146,7 +3146,7 @@ int av_get_bits_per_sample(enum AVCodecID codec_id)
 }
 
 static int get_audio_frame_duration(enum AVCodecID id, int sr, int ch, int ba,
-                                    uint32_t tag, int bits_per_coded_sample, int64_t bitrate
+                                    uint32_t tag, int bits_per_coded_sample, int64_t bitrate,
                                     uint8_t * extradata, int frame_size, int frame_bytes)
 {
     int bps = av_get_exact_bits_per_sample(id);
