@@ -164,18 +164,18 @@ static int copy_stream_props(AVStream *st, AVStream *source_st)
 {
     int ret;
 
-    if (st->codec->codec_id || !source_st->codec->codec_id) {
-        if (st->codec->extradata_size < source_st->codec->extradata_size) {
-            ret = ff_alloc_extradata(st->codec,
-                                     source_st->codec->extradata_size);
+    if (st->codecpar->codec_id || !source_st->codecpar->codec_id) {
+        if (st->codecpar->extradata_size < source_st->codecpar->extradata_size) {
+            ret = ff_alloc_extradata(st->codecpar,
+                                     source_st->codecpar->extradata_size);
             if (ret < 0)
                 return ret;
         }
-        memcpy(st->codec->extradata, source_st->codec->extradata,
-               source_st->codec->extradata_size);
+        memcpy(st->codecpar->extradata, source_st->codecpar->extradata,
+               source_st->codecpar->extradata_size);
         return 0;
     }
-    if ((ret = avcodec_copy_context(st->codec, source_st->codec)) < 0)
+    if ((ret = avcodec_parameters_copy(st->codecpar, source_st->codecpar)) < 0)
         return ret;
     st->r_frame_rate        = source_st->r_frame_rate;
     st->avg_frame_rate      = source_st->avg_frame_rate;
@@ -193,8 +193,8 @@ static int detect_stream_specific(AVFormatContext *avf, int idx)
     ConcatStream *cs = &cat->cur_file->streams[idx];
     AVBitStreamFilterContext *bsf;
 
-    if (cat->auto_convert && st->codec->codec_id == AV_CODEC_ID_H264 &&
-        (st->codec->extradata_size < 4 || AV_RB32(st->codec->extradata) != 1)) {
+    if (cat->auto_convert && st->codecpar->codec_id == AV_CODEC_ID_H264 &&
+        (st->codecpar->extradata_size < 4 || AV_RB32(st->codecpar->extradata) != 1)) {
         av_log(cat->avf, AV_LOG_INFO,
                "Auto-inserting h264_mp4toannexb bitstream filter\n");
         if (!(bsf = av_bitstream_filter_init("h264_mp4toannexb"))) {
@@ -499,7 +499,7 @@ static int filter_packet(AVFormatContext *avf, ConcatStream *cs, AVPacket *pkt)
     av_assert0(cs->out_stream_index >= 0);
     for (bsf = cs->bsf; bsf; bsf = bsf->next) {
         pkt2 = *pkt;
-        ret = av_bitstream_filter_filter(bsf, st->codec, NULL,
+        ret = av_bitstream_filter_filter(bsf, st->internal->avctx, NULL,
                                          &pkt2.data, &pkt2.size,
                                          pkt->data, pkt->size,
                                          !!(pkt->flags & AV_PKT_FLAG_KEY));

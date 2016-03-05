@@ -69,9 +69,9 @@ static int dfa_read_header(AVFormatContext *s)
     avio_skip(pb, 128 - 16); // padding
     st->duration = frames;
 
-    if (ff_alloc_extradata(st->codec, 2))
+    if (ff_alloc_extradata(st->codecpar, 2))
         return AVERROR(ENOMEM);
-    AV_WL16(st->codec->extradata, version);
+    AV_WL16(st->codecpar->extradata, version);
     if (version == 0x100)
         st->sample_aspect_ratio = (AVRational){2, 1};
 
