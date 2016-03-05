@@ -137,7 +137,6 @@ static int srt_read_header(AVFormatContext *s)
     avpriv_set_pts_info(st, 64, 1, 1000);
     st->codecpar->codec_type = AVMEDIA_TYPE_SUBTITLE;
     st->codecpar->codec_id   = AV_CODEC_ID_SUBRIP;
-}
 
     av_bprint_init(&buf, 0, AV_BPRINT_SIZE_UNLIMITED);
 
