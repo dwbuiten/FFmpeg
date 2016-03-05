@@ -2020,14 +2020,14 @@ static int mov_parse_stsd_data(MOVContext *c, AVIOContext *pb,
             int val;
             val = AV_RB32(st->codecpar->extradata + 4);
             tmcd_ctx->tmcd_flags = val;
-            st->avg_frame_rate.den = st->codecpar->extradata[16]; /* number of frame */
-            st->avg_frame_rate.num = 1;
+            st->avg_frame_rate.num = st->codecpar->extradata[16]; /* number of frame */
+            st->avg_frame_rate.den = 1;
             /* adjust for per frame dur in counter mode */
             if (tmcd_ctx->tmcd_flags & 0x0008) {
                 int timescale = AV_RB32(st->codecpar->extradata + 8);
                 int framedur = AV_RB32(st->codecpar->extradata + 12);
-                st->avg_frame_rate.den *= timescale;
-                st->avg_frame_rate.num *= framedur;
+                st->avg_frame_rate.num *= timescale;
+                st->avg_frame_rate.den *= framedur;
             }
             if (size > 30) {
                 uint32_t len = AV_RB32(st->codecpar->extradata + 18); /* name atom length */
@@ -4506,8 +4506,7 @@ static int parse_timecode_in_framenum_format(AVFormatContext *s, AVStream *st,
 {
     AVTimecode tc;
     char buf[AV_TIMECODE_STR_SIZE];
-    AVRational rate = {st->avg_frame_rate.den,
-                       st->avg_frame_rate.num};
+    AVRational rate = st->avg_frame_rate;
     int ret = av_timecode_init(&tc, rate, flags, 0, s);
     if (ret < 0)
         return ret;

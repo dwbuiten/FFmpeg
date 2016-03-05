@@ -85,7 +85,6 @@ int ff_raw_video_read_header(AVFormatContext *s)
     st->need_parsing = AVSTREAM_PARSE_FULL_RAW;
 
     st->avg_frame_rate = s1->framerate;
-    st->time_base = av_inv_q(s1->framerate);
     avpriv_set_pts_info(st, 64, 1, 1200000);
 
 fail:
