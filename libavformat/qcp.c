@@ -108,11 +108,11 @@ static int qcp_read_header(AVFormatContext *s)
     if (is_qcelp_13k_guid(buf)) {
         st->codecpar->codec_id = AV_CODEC_ID_QCELP;
     } else if (!memcmp(buf, guid_evrc, 16)) {
-        st->codec->codec_id = AV_CODEC_ID_EVRC;
+        st->codecpar->codec_id = AV_CODEC_ID_EVRC;
     } else if (!memcmp(buf, guid_smv, 16)) {
-        st->codec->codec_id = AV_CODEC_ID_SMV;
+        st->codecpar->codec_id = AV_CODEC_ID_SMV;
     } else if (!memcmp(buf, guid_4gv, 16)) {
-        st->codec->codec_id = AV_CODEC_ID_4GV;
+        st->codecpar->codec_id = AV_CODEC_ID_4GV;
     } else {
         av_log(s, AV_LOG_ERROR, "Unknown codec GUID "FF_PRI_GUID".\n",
                FF_ARG_GUID(buf));
