@@ -3960,6 +3960,14 @@ FF_ENABLE_DEPRECATION_WARNINGS
     if (!st->internal)
         goto fail;
 
+    st->codecpar = avcodec_parameters_alloc();
+    if (!st->codecpar)
+        goto fail;
+
+    st->internal->avctx = avcodec_alloc_context3(NULL);
+    if (!st->internal->avctx)
+        goto fail;
+
     if (s->iformat) {
 #if FF_API_LAVF_AVCTX
 FF_DISABLE_DEPRECATION_WARNINGS
@@ -3978,14 +3986,6 @@ FF_ENABLE_DEPRECATION_WARNINGS
     } else {
         st->cur_dts = AV_NOPTS_VALUE;
     }
-
-    st->codecpar = avcodec_parameters_alloc();
-    if (!st->codecpar)
-        goto fail;
-
-    st->internal->avctx = avcodec_alloc_context3(NULL);
-    if (!st->internal->avctx)
-        goto fail;
 
     st->index      = s->nb_streams;
     st->start_time = AV_NOPTS_VALUE;
