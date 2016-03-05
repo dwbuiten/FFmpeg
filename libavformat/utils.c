@@ -4520,29 +4520,36 @@ int avformat_match_stream_specifier(AVFormatContext *s, AVStream *st,
         case 'V': type = AVMEDIA_TYPE_VIDEO; nopic = 1; break;
         default:  av_assert0(0);
         }
-        if (type != st->codecpar->codec_type
 #if FF_API_LAVF_AVCTX
 FF_DISABLE_DEPRECATION_WARNINGS
-           && (st->codecpar->codec_type != AVMEDIA_TYPE_UNKNOWN || st->codec->codec_type != type)
-FF_ENABLE_DEPRECATION_WARNINGS
-#endif
-           )
+        if (type != st->codecpar->codec_type
+           && (st->codecpar->codec_type != AVMEDIA_TYPE_UNKNOWN || st->codec->codec_type != type))
             return 0;
+FF_ENABLE_DEPRECATION_WARNINGS
+#else
+        if (type != st->codecpar->codec_type)
+            return 0;
+#endif
         if (nopic && (st->disposition & AV_DISPOSITION_ATTACHED_PIC))
             return 0;
         if (*spec++ == ':') { /* possibly followed by :index */
             int i, index = strtol(spec, NULL, 0);
             for (i = 0; i < s->nb_streams; i++)
-                if ((s->streams[i]->codecpar->codec_type == type
 #if FF_API_LAVF_AVCTX
 FF_DISABLE_DEPRECATION_WARNINGS
+                if ((s->streams[i]->codecpar->codec_type == type
                       || s->streams[i]->codec->codec_type == type
-FF_ENABLE_DEPRECATION_WARNINGS
-#endif
                     ) &&
                     !(nopic && (st->disposition & AV_DISPOSITION_ATTACHED_PIC)) &&
                     index-- == 0)
                     return i == st->index;
+FF_ENABLE_DEPRECATION_WARNINGS
+#else
+                if ((s->streams[i]->codecpar->codec_type == type) &&
+                    !(nopic && (st->disposition & AV_DISPOSITION_ATTACHED_PIC)) &&
+                    index-- == 0)
+                    return i == st->index;
+#endif
             return 0;
         }
         return 1;
