@@ -4520,14 +4520,26 @@ int avformat_match_stream_specifier(AVFormatContext *s, AVStream *st,
         case 'V': type = AVMEDIA_TYPE_VIDEO; nopic = 1; break;
         default:  av_assert0(0);
         }
-        if (type != st->codecpar->codec_type)
+        if (type != st->codecpar->codec_type
+#if FF_API_LAVF_AVCTX
+FF_DISABLE_DEPRECATION_WARNINGS
+           && (st->codecpar->codec_type != AVMEDIA_TYPE_UNKNOWN || st->codec->codec_type != type)
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
+           )
             return 0;
         if (nopic && (st->disposition & AV_DISPOSITION_ATTACHED_PIC))
             return 0;
         if (*spec++ == ':') { /* possibly followed by :index */
             int i, index = strtol(spec, NULL, 0);
             for (i = 0; i < s->nb_streams; i++)
-                if (s->streams[i]->codecpar->codec_type == type &&
+                if ((s->streams[i]->codecpar->codec_type == type
+#if FF_API_LAVF_AVCTX
+FF_DISABLE_DEPRECATION_WARNINGS
+                      || s->streams[i]->codec->codec_type == type
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
+                    ) &&
                     !(nopic && (st->disposition & AV_DISPOSITION_ATTACHED_PIC)) &&
                     index-- == 0)
                     return i == st->index;
@@ -4588,16 +4600,35 @@ int avformat_match_stream_specifier(AVFormatContext *s, AVStream *st,
         return ret;
     } else if (*spec == 'u') {
         AVCodecParameters *par = st->codecpar;
+#if FF_API_LAVF_AVCTX
+FF_DISABLE_DEPRECATION_WARNINGS
+        AVCodecContext *codec = st->codec;
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
         int val;
         switch (par->codec_type) {
         case AVMEDIA_TYPE_AUDIO:
             val = par->sample_rate && par->channels;
-            if (par->format == AV_SAMPLE_FMT_NONE)
+#if FF_API_LAVF_AVCTX
+            val = val || (codec->sample_rate && codec->channels);
+#endif
+            if (par->format == AV_SAMPLE_FMT_NONE
+#if FF_API_LAVF_AVCTX
+                && codec->sample_fmt == AV_SAMPLE_FMT_NONE
+#endif
+                )
                 return 0;
             break;
         case AVMEDIA_TYPE_VIDEO:
             val = par->width && par->height;
-            if (par->format == AV_PIX_FMT_NONE)
+#if FF_API_LAVF_AVCTX
+            val = val || (codec->width && codec->height);
+#endif
+            if (par->format == AV_PIX_FMT_NONE
+#if FF_API_LAVF_AVCTX
+                && codec->pix_fmt == AV_PIX_FMT_NONE
+#endif
+                )
                 return 0;
             break;
         case AVMEDIA_TYPE_UNKNOWN:
@@ -4607,7 +4638,11 @@ int avformat_match_stream_specifier(AVFormatContext *s, AVStream *st,
             val = 1;
             break;
         }
+#if FF_API_LAVF_AVCTX
+        return (par->codec_id != AV_CODEC_ID_NONE || codec->codec_id != AV_CODEC_ID_NONE) && val != 0;
+#else
         return par->codec_id != AV_CODEC_ID_NONE && val != 0;
+#endif
     } else if (!*spec) /* empty specifier, matches everything */
         return 1;
 
