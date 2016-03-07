@@ -4308,6 +4308,11 @@ void avpriv_set_pts_info(AVStream *s, int pts_wrap_bits,
         return;
     }
     s->time_base     = new_tb;
+#if FF_API_LAVF_AVCTX
+FF_DISABLE_DEPRECATION_WARNINGS
+    av_codec_set_pkt_timebase(s->codec, new_tb);
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
     av_codec_set_pkt_timebase(s->internal->avctx, new_tb);
     s->pts_wrap_bits = pts_wrap_bits;
 }
