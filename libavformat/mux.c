@@ -437,10 +437,10 @@ static int init_pts(AVFormatContext *s)
 
         switch (st->codecpar->codec_type) {
         case AVMEDIA_TYPE_AUDIO:
-            den = (int64_t)st->time_base.num * st->codec->sample_rate;
+            den = (int64_t)st->time_base.num * st->codecpar->sample_rate;
             break;
         case AVMEDIA_TYPE_VIDEO:
-            den = (int64_t)st->time_base.num * st->codec->time_base.den;
+            den = (int64_t)st->time_base.num * st->time_base.den;
             break;
         default:
             break;
