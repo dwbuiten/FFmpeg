@@ -921,7 +921,7 @@ static void do_video_out(AVFormatContext *s,
     int ret, format_video_sync;
     AVPacket pkt;
     AVCodecContext *enc = ost->enc_ctx;
-    AVCodecContext *mux_enc = ost->st->codecpar;
+    AVCodecContext *mux_enc = ost->st->codec;
     int nb_frames, nb0_frames, i;
     double delta, delta0;
     double duration = 0;
