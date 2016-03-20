@@ -537,7 +537,7 @@ static int write_streaminfo(NUTContext *nut, AVIOContext *bc, int stream_id) {
         if (st->r_frame_rate.num>0 && st->r_frame_rate.den>0)
             snprintf(buf, sizeof(buf), "%d/%d", st->r_frame_rate.num, st->r_frame_rate.den);
         else
-            snprintf(buf, sizeof(buf), "%d/%d", st->time_base.den, st->time_base.num);
+            snprintf(buf, sizeof(buf), "%d/%d", st->avg_frame_rate.num, st->avg_frame_rate.den);
         count += add_info(dyn_bc, "r_frame_rate", buf);
     }
     dyn_size = avio_close_dyn_buf(dyn_bc, &dyn_buf);
