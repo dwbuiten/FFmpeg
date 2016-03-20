@@ -1836,8 +1836,8 @@ static int mov_write_tmcd_tag(AVIOContext *pb, MOVTrack *track)
 {
     int64_t pos = avio_tell(pb);
 #if 1
-    int frame_duration = av_rescale(track->timescale, track->st->time_base.num, track->st->time_base.den);
-    int nb_frames = ROUNDED_DIV(track->st->time_base.den, track->st->time_base.num);
+    int frame_duration = av_rescale(track->timescale, track->st->avg_frame_rate.num, track->st->avg_frame_rate.den);
+    int nb_frames = ROUNDED_DIV(track->st->avg_frame_rate.den, track->st->avg_frame_rate.num);
     AVDictionaryEntry *t = NULL;
 
     if (nb_frames > 255) {
