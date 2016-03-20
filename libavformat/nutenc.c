@@ -179,7 +179,7 @@ static void build_frame_code(AVFormatContext *s)
             if (par->codec_id == AV_CODEC_ID_VORBIS && !frame_size)
                 frame_size = 64;
         } else {
-            AVRational f = av_div_q(s->streams[stream_id]->time_base, *nut->stream[stream_id].time_base);
+            AVRational f = av_div_q(av_inv_q(s->streams[stream_id]->avg_frame_rate), *nut->stream[stream_id].time_base);
             if (f.den == 1 && f.num>0)
                 frame_size = f.num;
         }
