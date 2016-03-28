@@ -1764,7 +1764,7 @@ static int mov_write_video_tag(AVIOContext *pb, MOVMuxContext *mov, MOVTrack *tr
 
 #if FF_API_LAVF_AVCTX
     FF_DISABLE_DEPRECATION_WARNINGS
-    if (field_order != track->st->codec->field_order)
+    if (field_order != track->st->codec->field_order && track->st->codec->field_order != AV_FIELD_UNKNOWN)
         field_order = track->st->codec->field_order;
     FF_ENABLE_DEPRECATION_WARNINGS
 #endif
