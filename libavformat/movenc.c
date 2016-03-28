@@ -1488,11 +1488,11 @@ static const uint16_t fiel_data[] = {
     0x0000, 0x0100, 0x0201, 0x0206, 0x0209, 0x020e
 };
 
-static int mov_write_fiel_tag(AVIOContext *pb, MOVTrack *track)
+static int mov_write_fiel_tag(AVIOContext *pb, MOVTrack *track, int field_order)
 {
     unsigned mov_field_order = 0;
-    if (track->par->field_order < FF_ARRAY_ELEMS(fiel_data))
-        mov_field_order = fiel_data[track->par->field_order];
+    if (field_order < FF_ARRAY_ELEMS(fiel_data))
+        mov_field_order = fiel_data[field_order];
     else
         return 0;
     avio_wb32(pb, 10);
@@ -1759,9 +1759,19 @@ static int mov_write_video_tag(AVIOContext *pb, MOVMuxContext *mov, MOVTrack *tr
 
     if (track->par->codec_id != AV_CODEC_ID_H264 &&
         track->par->codec_id != AV_CODEC_ID_MPEG4 &&
-        track->par->codec_id != AV_CODEC_ID_DNXHD)
-        if (track->par->field_order != AV_FIELD_UNKNOWN)
-            mov_write_fiel_tag(pb, track);
+        track->par->codec_id != AV_CODEC_ID_DNXHD) {
+	    int field_order = track->par->field_order;
+
+#if FF_API_LAVF_AVCTX
+    FF_DISABLE_DEPRECATION_WARNINGS
+    if (field_order != track->st->codec->field_order)
+        field_order = track->st->codec->field_order;
+    FF_ENABLE_DEPRECATION_WARNINGS
+#endif
+
+        if (field_order != AV_FIELD_UNKNOWN)
+            mov_write_fiel_tag(pb, track, field_order);
+    }
 
     if (mov->flags & FF_MOV_FLAG_WRITE_GAMA) {
         if (track->mode == MODE_MOV)
