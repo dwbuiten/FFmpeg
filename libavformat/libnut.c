@@ -75,19 +75,19 @@ static int nut_write_header(AVFormatContext * avf) {
         return AVERROR(ENOMEM);
 
     for (i = 0; i < avf->nb_streams; i++) {
-        AVCodecContext * codec = avf->streams[i]->codec;
+        AVCodecParameters *par = avf->streams[i]->codecpar;
         int j;
         int fourcc = 0;
         int num, denom, ssize;
 
-        s[i].type = codec->codec_type == AVMEDIA_TYPE_VIDEO ? NUT_VIDEO_CLASS : NUT_AUDIO_CLASS;
+        s[i].type = par->codec_type == AVMEDIA_TYPE_VIDEO ? NUT_VIDEO_CLASS : NUT_AUDIO_CLASS;
 
         if (codec->codec_tag) fourcc = codec->codec_tag;
         else fourcc = ff_codec_get_tag(nut_tags, codec->codec_id);
 
         if (!fourcc) {
-            if (codec->codec_type == AVMEDIA_TYPE_VIDEO) fourcc = ff_codec_get_tag(ff_codec_bmp_tags, codec->codec_id);
-            if (codec->codec_type == AVMEDIA_TYPE_AUDIO) fourcc = ff_codec_get_tag(ff_codec_wav_tags, codec->codec_id);
+            if (par->codec_type == AVMEDIA_TYPE_VIDEO) fourcc = ff_codec_get_tag(ff_codec_bmp_tags, codec->codec_id);
+            if (par->codec_type == AVMEDIA_TYPE_AUDIO) fourcc = ff_codec_get_tag(ff_codec_wav_tags, codec->codec_id);
         }
 
         s[i].fourcc_len = 4;
@@ -101,20 +101,20 @@ static int nut_write_header(AVFormatContext * avf) {
         s[i].time_base.den = num;
 
         s[i].fixed_fps = 0;
-        s[i].decode_delay = codec->has_b_frames;
-        s[i].codec_specific_len = codec->extradata_size;
-        s[i].codec_specific = codec->extradata;
+        s[i].decode_delay = avf->stream[i]->codec->has_b_frames;
+        s[i].codec_specific_len = par->extradata_size;
+        s[i].codec_specific = par->extradata;
 
-        if (codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-            s[i].width = codec->width;
-            s[i].height = codec->height;
+        if (par->codec_type == AVMEDIA_TYPE_VIDEO) {
+            s[i].width = par->width;
+            s[i].height = par->height;
             s[i].sample_width = 0;
             s[i].sample_height = 0;
             s[i].colorspace_type = 0;
         } else {
-            s[i].samplerate_num = codec->sample_rate;
+            s[i].samplerate_num = par->sample_rate;
             s[i].samplerate_denom = 1;
-            s[i].channel_count = codec->channels;
+            s[i].channel_count = par->channels;
         }
     }
 
