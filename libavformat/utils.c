@@ -3681,6 +3681,8 @@ FF_DISABLE_DEPRECATION_WARNINGS
         if (ret < 0)
             goto find_stream_info_err;
 
+        st->codec->time_base = st->internal->avctx->time_base;
+
         if (st->internal->avctx->subtitle_header) {
             st->codec->subtitle_header = av_malloc(st->internal->avctx->subtitle_header_size);
             if (!st->codec->subtitle_header)
@@ -4310,10 +4312,10 @@ void avpriv_set_pts_info(AVStream *s, int pts_wrap_bits,
     s->time_base     = new_tb;
 #if FF_API_LAVF_AVCTX
 FF_DISABLE_DEPRECATION_WARNINGS
-    av_codec_set_pkt_timebase(s->codec, new_tb);
+    //av_codec_set_pkt_timebase(s->codec, new_tb);
 FF_ENABLE_DEPRECATION_WARNINGS
 #endif
-    av_codec_set_pkt_timebase(s->internal->avctx, new_tb);
+    //av_codec_set_pkt_timebase(s->internal->avctx, new_tb);
     s->pts_wrap_bits = pts_wrap_bits;
 }
 
