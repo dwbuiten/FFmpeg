@@ -234,7 +234,7 @@ static void build_frame_code(AVFormatContext *s)
         }
 #endif
 
-        if (s->streams[stream_id]->codec->has_b_frames) {
+        if (par->video_delay) {
             pred_count    = 5;
             pred_table[0] = -2;
             pred_table[1] = -1;
@@ -447,7 +447,7 @@ static int write_streamheader(AVFormatContext *avctx, AVIOContext *bc,
     ff_put_v(bc, nut->stream[i].time_base - nut->time_base);
     ff_put_v(bc, nut->stream[i].msb_pts_shift);
     ff_put_v(bc, nut->stream[i].max_pts_distance);
-    ff_put_v(bc, st->codec->has_b_frames);
+    ff_put_v(bc, par->video_delay);
     avio_w8(bc, 0); /* flags: 0x1 - fixed_fps, 0x2 - index_present */
 
     ff_put_v(bc, par->extradata_size);
