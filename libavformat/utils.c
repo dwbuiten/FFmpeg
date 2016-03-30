@@ -3571,6 +3571,12 @@ FF_ENABLE_DEPRECATION_WARNINGS
             /* set the video delay from the previous decoding operations. */
             st->codecpar->video_delay = avctx->has_b_frames;
 
+#if FF_API_LAVF_AVCTX
+FF_DISABLE_DEPRECATION_WARNINGS
+            st->codec->framerate = st->avg_frame_rate;
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
+
             /* estimate average framerate if not set by demuxer */
             if (st->info->codec_info_duration_fields &&
                 !st->avg_frame_rate.num &&
