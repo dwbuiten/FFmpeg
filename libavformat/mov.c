@@ -2691,7 +2691,7 @@ static void mov_build_index(MOVContext *mov, AVStream *st)
                 /* more than 16 frames delay, dts are likely wrong
                    this happens with files created by iMovie */
                 sc->wrong_dts = 1;
-                st->codec->has_b_frames = 1;
+                st->codecpar->video_delay = 1;
             }
         }
     }
