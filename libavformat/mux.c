@@ -440,7 +440,7 @@ static int init_pts(AVFormatContext *s)
             den = (int64_t)st->time_base.num * st->codecpar->sample_rate;
             break;
         case AVMEDIA_TYPE_VIDEO:
-            den = (int64_t)st->time_base.num * st->avg_frame_rate.num;
+            den = (int64_t)st->time_base.num * st->time_base.den;
             break;
         default:
             break;
@@ -606,7 +606,7 @@ static int compute_muxer_pkt_fields(AVFormatContext *s, AVStream *st, AVPacket *
         }
         break;
     case AVMEDIA_TYPE_VIDEO:
-        frac_add(st->priv_pts, (int64_t)st->time_base.den * st->avg_frame_rate.den);
+        frac_add(st->priv_pts, (int64_t)st->time_base.den * st->time_base.num);
         break;
     }
     return 0;
