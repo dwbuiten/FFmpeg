@@ -3568,15 +3568,6 @@ FF_ENABLE_DEPRECATION_WARNINGS
                     avctx->codec_tag= tag;
             }
 
-            /* set the video delay from the previous decoding operations. */
-            st->codecpar->video_delay = avctx->has_b_frames;
-
-#if FF_API_LAVF_AVCTX
-FF_DISABLE_DEPRECATION_WARNINGS
-            st->codec->framerate = st->avg_frame_rate;
-FF_ENABLE_DEPRECATION_WARNINGS
-#endif
-
             /* estimate average framerate if not set by demuxer */
             if (st->info->codec_info_duration_fields &&
                 !st->avg_frame_rate.num &&
@@ -3691,6 +3682,7 @@ FF_DISABLE_DEPRECATION_WARNINGS
             goto find_stream_info_err;
 
         st->codec->time_base = st->internal->avctx->time_base;
+        st->codec->framerate = st->avg_frame_rate;
 
         if (st->internal->avctx->subtitle_header) {
             st->codec->subtitle_header = av_malloc(st->internal->avctx->subtitle_header_size);
