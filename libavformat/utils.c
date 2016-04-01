@@ -1470,6 +1470,7 @@ static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
         } else if (st->discard < AVDISCARD_ALL) {
             if ((ret = parse_packet(s, &cur_pkt, cur_pkt.stream_index)) < 0)
                 return ret;
+            st->codecpar->sample_rate = st->internal->avctx->sample_rate;
         } else {
             /* free packet */
             av_packet_unref(&cur_pkt);
