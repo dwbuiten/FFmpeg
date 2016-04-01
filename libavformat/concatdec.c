@@ -499,7 +499,7 @@ static int filter_packet(AVFormatContext *avf, ConcatStream *cs, AVPacket *pkt)
     av_assert0(cs->out_stream_index >= 0);
     for (bsf = cs->bsf; bsf; bsf = bsf->next) {
         pkt2 = *pkt;
-        ret = av_bitstream_filter_filter(bsf, st->internal->avctx, NULL,
+        ret = av_bitstream_filter_filter(bsf, st->codec, NULL,
                                          &pkt2.data, &pkt2.size,
                                          pkt->data, pkt->size,
                                          !!(pkt->flags & AV_PKT_FLAG_KEY));

@@ -459,7 +459,7 @@ static int tee_write_packet(AVFormatContext *avf, AVPacket *pkt)
         pkt2.duration = av_rescale_q(pkt->duration, tb, tb2);
         pkt2.stream_index = s2;
 
-        if ((ret = av_apply_bitstream_filters(avf2->streams[s2]->internal->avctx, &pkt2,
+        if ((ret = av_apply_bitstream_filters(avf2->streams[s2]->codec, &pkt2,
                                               tee->slaves[i].bsfs[s2])) < 0 ||
             (ret = av_interleaved_write_frame(avf2, &pkt2)) < 0)
             if (!ret_all)
