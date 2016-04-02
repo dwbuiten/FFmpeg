@@ -4547,7 +4547,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
             return 0;
         if (*spec++ == ':') { /* possibly followed by :index */
             int i, index = strtol(spec, NULL, 0);
-            for (i = 0; i < s->nb_streams; i++)
+            for (i = 0; i < s->nb_streams; i++) {
 #if FF_API_LAVF_AVCTX
 FF_DISABLE_DEPRECATION_WARNINGS
                 if ((s->streams[i]->codecpar->codec_type == type
@@ -4563,6 +4563,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
                     index-- == 0)
                     return i == st->index;
 #endif
+            }
             return 0;
         }
         return 1;
