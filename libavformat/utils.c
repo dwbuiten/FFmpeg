@@ -1419,6 +1419,10 @@ static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
         }
         ret = 0;
         st  = s->streams[cur_pkt.stream_index];
+        if (s->ctx_flags & AVFMTCTX_NOHEADER) {
+            st->internal->avctx->codec_id   = st->codecpar->codec_id;
+            st->internal->avctx->codec_type = st->codecpar->codec_type;
+        }
 
         if (cur_pkt.pts != AV_NOPTS_VALUE &&
             cur_pkt.dts != AV_NOPTS_VALUE &&
