@@ -62,6 +62,18 @@ typedef struct WAVDemuxContext {
 
 #if CONFIG_WAV_DEMUXER
 
+#define CHECK_SPDIF do { \
+    if (CONFIG_SPDIF_DEMUXER && s->streams[0]->codecpar->codec_tag == 1) { \
+        enum AVCodecID codec; \
+        ret = ff_spdif_probe(s->pb->buffer, s->pb->buf_end - s->pb->buffer, \
+                             &codec); \
+        if (ret > AVPROBE_SCORE_EXTENSION) { \
+            s->streams[0]->codecpar->codec_id = codec; \
+            wav->spdif = 1; \
+        } \
+    } \
+	} while (0)
+
 static int64_t next_tag(AVIOContext *pb, uint32_t *tag, int big_endian)
 {
     *tag = avio_rl32(pb);
@@ -528,6 +540,8 @@ break_loop:
     ff_metadata_conv_ctx(s, NULL, wav_metadata_conv);
     ff_metadata_conv_ctx(s, NULL, ff_riff_info_conv);
 
+    CHECK_SPDIF;
+
     return 0;
 }
 
@@ -561,18 +575,6 @@ static int wav_read_packet(AVFormatContext *s, AVPacket *pkt)
     AVStream *st;
     WAVDemuxContext *wav = s->priv_data;
 
-    if (CONFIG_SPDIF_DEMUXER && wav->spdif == 0 &&
-        s->streams[0]->codecpar->codec_tag == 1) {
-        enum AVCodecID codec;
-        ret = ff_spdif_probe(s->pb->buffer, s->pb->buf_end - s->pb->buffer,
-                             &codec);
-        if (ret > AVPROBE_SCORE_EXTENSION) {
-            s->streams[0]->codecpar->codec_id = codec;
-            wav->spdif = 1;
-        } else {
-            wav->spdif = -1;
-        }
-    }
     if (CONFIG_SPDIF_DEMUXER && wav->spdif == 1)
         return ff_spdif_read_packet(s, pkt);
 
@@ -832,6 +834,8 @@ static int w64_read_header(AVFormatContext *s)
     st->need_parsing = AVSTREAM_PARSE_FULL_RAW;
 
     avio_seek(pb, data_ofs, SEEK_SET);
+
+    CHECK_SPDIF;
 
     return 0;
 }
