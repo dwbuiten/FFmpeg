@@ -1422,6 +1422,16 @@ static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
         if (s->ctx_flags & AVFMTCTX_NOHEADER) {
             st->internal->avctx->codec_id   = st->codecpar->codec_id;
             st->internal->avctx->codec_type = st->codecpar->codec_type;
+            st->internal->avctx->codec_tag  = st->codecpar->codec_tag;
+            if (!st->internal->avctx->extradata && st->codecpar->extradata_size != 0) {
+                st->internal->avctx->extradata_size = st->codecpar->extradata_size;
+                st->internal->avctx->extradata      = av_malloc(st->codecpar->extradata_size);
+                if (!st->internal->avctx->extradata) {
+                    st->internal->avctx->extradata_size = 0;
+                    return AVERROR(ENOMEM);
+                }
+                memcpy(st->internal->avctx->extradata, st->codecpar->extradata, st->codecpar->extradata_size);
+            }
         }
 
         if (cur_pkt.pts != AV_NOPTS_VALUE &&
