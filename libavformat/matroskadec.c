@@ -3001,7 +3001,7 @@ static int matroska_parse_block(MatroskaDemuxContext *matroska, uint8_t *data,
     if (track->audio.samplerate == 8000) {
         // If this is needed for more codecs, then add them here
         if (st->codecpar->codec_id == AV_CODEC_ID_AC3) {
-            if (track->audio.samplerate != st->codecpar->sample_rate)
+            if (track->audio.samplerate != st->codecpar->sample_rate || !st->codecpar->frame_size)
                 trust_default_duration = 0;
         }
     }
