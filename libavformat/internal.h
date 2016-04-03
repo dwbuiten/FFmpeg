@@ -155,11 +155,10 @@ struct AVStreamInternal {
 
     enum AVCodecID orig_codec_id;
 
-#if FF_API_LAVF_AVCTX
-    // whether the deprecated stream codec context needs
-    // to be filled from the codec parameters
-    int need_codec_update;
-#endif
+    /**
+     * Whether the internal avctx needs to be updated from codecpar (after a late change to codecpar)
+     */
+    int need_context_update;
 };
 
 #ifdef __GNUC__

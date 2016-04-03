@@ -317,6 +317,7 @@ static int set_codec_from_probe_data(AVFormatContext *s, AVStream *st,
             if (!strcmp(fmt->name, fmt_id_type[i].name)) {
                 st->codecpar->codec_id   = fmt_id_type[i].id;
                 st->codecpar->codec_type = fmt_id_type[i].type;
+                st->internal->need_context_update = 1;
 #if FF_API_LAVF_AVCTX
 FF_DISABLE_DEPRECATION_WARNINGS
                 st->codec->codec_type = st->codecpar->codec_type;
@@ -435,27 +436,34 @@ int avformat_queue_attached_pictures(AVFormatContext *s)
     return 0;
 }
 
-#if FF_API_LAVF_AVCTX
-FF_DISABLE_DEPRECATION_WARNINGS
 static int update_stream_avctx(AVFormatContext *s)
 {
     int i, ret;
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *st = s->streams[i];
 
-        if (!st->internal->need_codec_update)
+        if (!st->internal->need_context_update)
             continue;
 
-        ret = avcodec_parameters_to_context(st->codec, st->codecpar);
+        /* update internal codec context, for the parser */
+        ret = avcodec_parameters_to_context(st->internal->avctx, st->codecpar);
         if (ret < 0)
             return ret;
 
-        st->internal->need_codec_update = 0;
+#if FF_API_LAVF_AVCTX
+FF_DISABLE_DEPRECATION_WARNINGS
+        /* update deprecated public codec context */
+        ret = avcodec_parameters_to_context(st->codec, st->codecpar);
+        if (ret < 0)
+            return ret;
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
+
+        st->internal->need_context_update = 0;
     }
     return 0;
 }
-FF_ENABLE_DEPRECATION_WARNINGS
-#endif
+
 
 int avformat_open_input(AVFormatContext **ps, const char *filename,
                         AVInputFormat *fmt, AVDictionary **options)
@@ -562,9 +570,7 @@ int avformat_open_input(AVFormatContext **ps, const char *filename,
 
     s->internal->raw_packet_buffer_remaining_size = RAW_PACKET_BUFFER_SIZE;
 
-#if FF_API_LAVF_AVCTX
     update_stream_avctx(s);
-#endif
 
     for (i = 0; i < s->nb_streams; i++)
         s->streams[i]->internal->orig_codec_id = s->streams[i]->codecpar->codec_id;
@@ -1419,19 +1425,19 @@ static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
         }
         ret = 0;
         st  = s->streams[cur_pkt.stream_index];
-        if (s->ctx_flags & AVFMTCTX_NOHEADER) {
-            st->internal->avctx->codec_id   = st->codecpar->codec_id;
-            st->internal->avctx->codec_type = st->codecpar->codec_type;
-            st->internal->avctx->codec_tag  = st->codecpar->codec_tag;
-            if (!st->internal->avctx->extradata && st->codecpar->extradata_size != 0) {
-                st->internal->avctx->extradata_size = st->codecpar->extradata_size;
-                st->internal->avctx->extradata      = av_malloc(st->codecpar->extradata_size);
-                if (!st->internal->avctx->extradata) {
-                    st->internal->avctx->extradata_size = 0;
-                    return AVERROR(ENOMEM);
-                }
-                memcpy(st->internal->avctx->extradata, st->codecpar->extradata, st->codecpar->extradata_size);
+
+        /* update context if required */
+        if (st->internal->need_context_update) {
+            if (avcodec_is_open(st->internal->avctx)) {
+                av_log(s, AV_LOG_WARNING, "Demuxer context update while decoder is open\n");
+                avcodec_close(st->internal->avctx);
             }
+
+            ret = avcodec_parameters_to_context(st->internal->avctx, st->codecpar);
+            if (ret < 0)
+                return ret;
+
+            st->internal->need_context_update = 0;
         }
 
         if (cur_pkt.pts != AV_NOPTS_VALUE &&
@@ -4028,9 +4034,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
 
     st->inject_global_side_data = s->internal->inject_global_side_data;
 
-#if FF_API_LAVF_AVCTX
-    st->internal->need_codec_update = 1;
-#endif
+    st->internal->need_context_update = 1;
 
     s->streams[s->nb_streams++] = st;
     return st;
