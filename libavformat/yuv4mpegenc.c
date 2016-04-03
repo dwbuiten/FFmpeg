@@ -33,10 +33,12 @@ static int yuv4_generate_header(AVFormatContext *s, char* buf)
     int raten, rated, aspectn, aspectd, n;
     char inter;
     const char *colorspace = "";
+    int field_order;
 
     st     = s->streams[0];
     width  = st->codecpar->width;
     height = st->codecpar->height;
+    field_order = st->codecpar->field_order;
 
     // TODO: should be avg_frame_rate
     av_reduce(&raten, &rated, st->time_base.den,
@@ -48,7 +50,14 @@ static int yuv4_generate_header(AVFormatContext *s, char* buf)
     if (aspectn == 0 && aspectd == 1)
         aspectd = 0;  // 0:0 means unknown
 
-    switch (st->codecpar->field_order) {
+#if FF_API_LAVF_AVCTX
+    FF_DISABLE_DEPRECATION_WARNINGS
+    if (field_order != st->codec->field_order && st->codec->field_order != AV_FIELD_UNKNOWN)
+        field_order = st->codec->field_order;
+    FF_ENABLE_DEPRECATION_WARNINGS
+#endif
+
+    switch (field_order) {
     case AV_FIELD_TB:
     case AV_FIELD_TT: inter = 't'; break;
     case AV_FIELD_BT:
