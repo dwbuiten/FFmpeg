@@ -1787,7 +1787,6 @@ int ff_parse_mpeg2_descriptor(AVFormatContext *fc, AVStream *st, int stream_type
         av_log(fc, AV_LOG_TRACE, "reg_desc=%.4s\n", (char *)&st->codecpar->codec_tag);
         if (st->codecpar->codec_id == AV_CODEC_ID_NONE || st->request_probe > 0)
             mpegts_find_stream_type(st, st->codecpar->codec_tag, REGD_types);
-        st->internal->need_context_update = 1;
         break;
     case 0x52: /* stream identifier descriptor */
         st->stream_identifier = 1 + get8(pp, desc_end);
@@ -1800,7 +1799,6 @@ int ff_parse_mpeg2_descriptor(AVFormatContext *fc, AVStream *st, int stream_type
             if (st->codecpar->codec_id == AV_CODEC_ID_NONE)
                 mpegts_find_stream_type(st, st->codecpar->codec_tag, METADATA_types);
         }
-        st->internal->need_context_update = 1;
         break;
     case 0x7f: /* DVB extension descriptor */
         ext_desc_tag = get8(pp, desc_end);
