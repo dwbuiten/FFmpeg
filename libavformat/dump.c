@@ -449,7 +449,8 @@ static void dump_stream_format(AVFormatContext *ic, int i,
            st->time_base.num, st->time_base.den);
     av_log(NULL, AV_LOG_INFO, ": %s", buf);
 
-    if (st->sample_aspect_ratio.num) {
+    if (st->sample_aspect_ratio.num &&
+        av_cmp_q(st->sample_aspect_ratio, st->codecpar->sample_aspect_ratio)) {
         AVRational display_aspect_ratio;
         av_reduce(&display_aspect_ratio.num, &display_aspect_ratio.den,
                   st->codecpar->width  * (int64_t)st->sample_aspect_ratio.num,
