@@ -1431,6 +1431,7 @@ static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
             if (avcodec_is_open(st->internal->avctx)) {
                 av_log(s, AV_LOG_WARNING, "Demuxer context update while decoder is open\n");
                 avcodec_close(st->internal->avctx);
+                st->info->found_decoder = 0;
             }
 
             ret = avcodec_parameters_to_context(st->internal->avctx, st->codecpar);
