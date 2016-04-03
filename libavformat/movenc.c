@@ -1212,7 +1212,20 @@ static int mov_get_dv_codec_tag(AVFormatContext *s, MOVTrack *track)
 
 static AVRational find_fps(AVFormatContext *s, AVStream *st)
 {
-    return st->avg_frame_rate;
+    AVRational rate = st->avg_frame_rate;
+
+#if FF_API_LAVF_AVCTX
+    FF_DISABLE_DEPRECATION_WARNINGS
+    rate = av_inv_q(st->codec->time_base);
+    if (av_timecode_check_frame_rate(rate) < 0) {
+        av_log(s, AV_LOG_DEBUG, "timecode: tbc=%d/%d invalid, fallback on %d/%d\n",
+               rate.num, rate.den, st->avg_frame_rate.num, st->avg_frame_rate.den);
+        rate = st->avg_frame_rate;
+    }
+    FF_ENABLE_DEPRECATION_WARNINGS
+#endif
+
+    return rate;
 }
 
 static int mov_get_mpeg2_xdcam_codec_tag(AVFormatContext *s, MOVTrack *track)
@@ -1846,9 +1859,24 @@ static int mov_write_tmcd_tag(AVIOContext *pb, MOVTrack *track)
 {
     int64_t pos = avio_tell(pb);
 #if 1
-    int frame_duration = av_rescale(track->timescale, track->st->avg_frame_rate.num, track->st->avg_frame_rate.den);
-    int nb_frames = ROUNDED_DIV(track->st->avg_frame_rate.den, track->st->avg_frame_rate.num);
+    int frame_duration;
+    int nb_frames;
     AVDictionaryEntry *t = NULL;
+
+    if (!track->st->avg_frame_rate.num || !track->st->avg_frame_rate.den) {
+#if FF_API_LAVF_AVCTX
+    FF_DISABLE_DEPRECATION_WARNINGS
+        frame_duration = av_rescale(track->timescale, track->st->codec->time_base.num, track->st->codec->time_base.den);
+        nb_frames      = ROUNDED_DIV(track->st->codec->time_base.den, track->st->codec->time_base.num);
+    FF_ENABLE_DEPRECATION_WARNINGS
+#else
+        av_log(NULL, AV_LOG_ERROR, "avg_frame_rate not set for tmcd track.\n");
+        return AVERROR(EINVAL);
+#endif
+    } else {
+        frame_duration = av_rescale(track->timescale, track->st->avg_frame_rate.num, track->st->avg_frame_rate.den);
+        nb_frames      = ROUNDED_DIV(track->st->avg_frame_rate.den, track->st->avg_frame_rate.num);
+    }
 
     if (nb_frames > 255) {
         av_log(NULL, AV_LOG_ERROR, "fps %d is too large\n", nb_frames);

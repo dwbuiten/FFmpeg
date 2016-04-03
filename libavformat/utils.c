@@ -3707,7 +3707,8 @@ FF_DISABLE_DEPRECATION_WARNINGS
         if (ret < 0)
             goto find_stream_info_err;
 
-        st->codec->time_base = st->internal->avctx->time_base;
+        if (st->codec->codec_tag != MKTAG('t','m','c','d'))
+            st->codec->time_base = st->internal->avctx->time_base;
         st->codec->framerate = st->avg_frame_rate;
 
         if (st->internal->avctx->subtitle_header) {

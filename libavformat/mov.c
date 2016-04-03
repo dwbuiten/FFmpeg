@@ -2029,12 +2029,23 @@ static int mov_parse_stsd_data(MOVContext *c, AVIOContext *pb,
             tmcd_ctx->tmcd_flags = val;
             st->avg_frame_rate.num = st->codecpar->extradata[16]; /* number of frame */
             st->avg_frame_rate.den = 1;
+#if FF_API_LAVF_AVCTX
+FF_DISABLE_DEPRECATION_WARNINGS
+            st->codec->time_base = av_inv_q(st->avg_frame_rate);
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
             /* adjust for per frame dur in counter mode */
             if (tmcd_ctx->tmcd_flags & 0x0008) {
                 int timescale = AV_RB32(st->codecpar->extradata + 8);
                 int framedur = AV_RB32(st->codecpar->extradata + 12);
                 st->avg_frame_rate.num *= timescale;
                 st->avg_frame_rate.den *= framedur;
+#if FF_API_LAVF_AVCTX
+FF_DISABLE_DEPRECATION_WARNINGS
+                st->codec->time_base.den *= timescale;
+                st->codec->time_base.num *= framedur;
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
             }
             if (size > 30) {
                 uint32_t len = AV_RB32(st->codecpar->extradata + 18); /* name atom length */
