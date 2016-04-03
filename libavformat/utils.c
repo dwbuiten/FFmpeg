@@ -1491,6 +1491,9 @@ static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
                 return ret;
             st->codecpar->sample_rate = st->internal->avctx->sample_rate;
             st->codecpar->bit_rate = st->internal->avctx->bit_rate;
+            st->codecpar->channels = st->internal->avctx->channels;
+            st->codecpar->channel_layout = st->internal->avctx->channel_layout;
+            st->codecpar->codec_id = st->internal->avctx->codec_id;
         } else {
             /* free packet */
             av_packet_unref(&cur_pkt);
