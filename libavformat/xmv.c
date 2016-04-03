@@ -329,9 +329,8 @@ static int xmv_process_packet_header(AVFormatContext *s)
     for (audio_track = 0; audio_track < xmv->audio_track_count; audio_track++) {
         XMVAudioPacket *packet = &xmv->audio[audio_track];
 
-        if (avio_read(pb, data, 4) != 4) { printf("WUT\n");
+        if (avio_read(pb, data, 4) != 4)
             return AVERROR(EIO);
-        }
 
         if (!packet->created) {
             AVStream *ast = avformat_new_stream(s, NULL);
