@@ -534,7 +534,6 @@ static int filter_packet(AVFormatContext *avf, ConcatStream *cs, AVPacket *pkt)
 
         if (cs->avctx->extradata_size > st->codecpar->extradata_size) {
             int eret;
-            printf("HERE\n");
             if (st->codecpar->extradata)
                 av_freep(&st->codecpar->extradata);
 
