@@ -84,7 +84,8 @@ old_flac_header (AVFormatContext * s, int idx)
     AVStream *st = s->streams[idx];
     struct ogg_stream *os = ogg->streams + idx;
     AVCodecParserContext *parser = av_parser_init(AV_CODEC_ID_FLAC);
-    int size;
+    AVCodecContext *avctx;
+    int size, ret;
     uint8_t *data;
 
     if (!parser)
@@ -93,18 +94,28 @@ old_flac_header (AVFormatContext * s, int idx)
     st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codecpar->codec_id = AV_CODEC_ID_FLAC;
 
+    avctx = avcodec_alloc_context3(NULL);
+    if (!avctx)
+        return -1;
+
+    ret = avcodec_parameters_to_context(avctx, st->codecpar);
+    if (ret < 0)
+        return -1;
+
     parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
-    av_parser_parse2(parser, st->internal->avctx,
+    av_parser_parse2(parser, avctx,
                      &data, &size, os->buf + os->pstart, os->psize,
                      AV_NOPTS_VALUE, AV_NOPTS_VALUE, -1);
 
     av_parser_close(parser);
 
-    if (st->internal->avctx->sample_rate) {
-        avpriv_set_pts_info(st, 64, 1, st->internal->avctx->sample_rate);
+    if (avctx->sample_rate) {
+        avpriv_set_pts_info(st, 64, 1, avctx->sample_rate);
+        avcodec_free_context(&avctx);
         return 0;
     }
 
+    avcodec_free_context(&avctx);
     return 1;
 }
 
