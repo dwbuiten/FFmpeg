@@ -35,6 +35,7 @@ typedef enum ConcatMatchMode {
 
 typedef struct ConcatStream {
     AVBitStreamFilterContext *bsf;
+    AVCodecContext *avctx;
     int out_stream_index;
 } ConcatStream;
 
@@ -166,6 +167,10 @@ static int copy_stream_props(AVStream *st, AVStream *source_st)
 
     if (st->codecpar->codec_id || !source_st->codecpar->codec_id) {
         if (st->codecpar->extradata_size < source_st->codecpar->extradata_size) {
+            if (st->codecpar->extradata) {
+                av_freep(&st->codecpar->extradata);
+                st->codecpar->extradata_size = 0;
+            }
             ret = ff_alloc_extradata(st->codecpar,
                                      source_st->codecpar->extradata_size);
             if (ret < 0)
@@ -192,6 +197,7 @@ static int detect_stream_specific(AVFormatContext *avf, int idx)
     AVStream *st = cat->avf->streams[idx];
     ConcatStream *cs = &cat->cur_file->streams[idx];
     AVBitStreamFilterContext *bsf;
+    int ret;
 
     if (cat->auto_convert && st->codecpar->codec_id == AV_CODEC_ID_H264 &&
         (st->codecpar->extradata_size < 4 || AV_RB32(st->codecpar->extradata) != 1)) {
@@ -203,6 +209,17 @@ static int detect_stream_specific(AVFormatContext *avf, int idx)
             return AVERROR_BSF_NOT_FOUND;
         }
         cs->bsf = bsf;
+
+        cs->avctx = avcodec_alloc_context3(NULL);
+        if (!cs->avctx)
+            return AVERROR(ENOMEM);
+
+        ret = avcodec_parameters_to_context(cs->avctx, st->codecpar);
+        if (ret < 0) {
+            avcodec_free_context(&cs->avctx);
+            return ret;
+        }
+
     }
     return 0;
 }
@@ -338,15 +355,21 @@ static int open_file(AVFormatContext *avf, unsigned fileno)
 static int concat_read_close(AVFormatContext *avf)
 {
     ConcatContext *cat = avf->priv_data;
-    unsigned i;
+    unsigned i, j;
 
-    if (cat->avf)
-        avformat_close_input(&cat->avf);
     for (i = 0; i < cat->nb_files; i++) {
         av_freep(&cat->files[i].url);
+        for (j = 0; j < cat->avf->nb_streams; j++) {
+            if (cat->files[i].streams[j].avctx)
+                avcodec_free_context(&cat->files[i].streams[j].avctx);
+            if (cat->files[i].streams[j].bsf)
+                av_bitstream_filter_close(cat->files[i].streams[j].bsf);
+        }
         av_freep(&cat->files[i].streams);
         av_dict_free(&cat->files[i].metadata);
     }
+    if (cat->avf)
+        avformat_close_input(&cat->avf);
     av_freep(&cat->files);
     return 0;
 }
@@ -499,7 +522,8 @@ static int filter_packet(AVFormatContext *avf, ConcatStream *cs, AVPacket *pkt)
     av_assert0(cs->out_stream_index >= 0);
     for (bsf = cs->bsf; bsf; bsf = bsf->next) {
         pkt2 = *pkt;
-        ret = av_bitstream_filter_filter(bsf, st->codec, NULL,
+
+        ret = av_bitstream_filter_filter(bsf, cs->avctx, NULL,
                                          &pkt2.data, &pkt2.size,
                                          pkt->data, pkt->size,
                                          !!(pkt->flags & AV_PKT_FLAG_KEY));
@@ -507,6 +531,22 @@ static int filter_packet(AVFormatContext *avf, ConcatStream *cs, AVPacket *pkt)
             av_packet_unref(pkt);
             return ret;
         }
+
+        if (cs->avctx->extradata_size > st->codecpar->extradata_size) {
+            int eret;
+            printf("HERE\n");
+            if (st->codecpar->extradata)
+                av_freep(&st->codecpar->extradata);
+
+            eret = ff_alloc_extradata(st->codecpar, cs->avctx->extradata_size);
+            if (eret < 0) {
+                av_packet_unref(pkt);
+                return AVERROR(ENOMEM);
+            }
+            st->codecpar->extradata_size = cs->avctx->extradata_size;
+            memcpy(st->codecpar->extradata, cs->avctx->extradata, cs->avctx->extradata_size);
+        }
+
         av_assert0(pkt2.buf);
         if (ret == 0 && pkt2.data != pkt->data) {
             if ((ret = av_copy_packet(&pkt2, pkt)) < 0) {
