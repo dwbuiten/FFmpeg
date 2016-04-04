@@ -885,7 +885,10 @@ void ff_compute_frame_duration(AVFormatContext *s, int *pnum, int *pden, AVStrea
         }
         break;
     case AVMEDIA_TYPE_AUDIO:
-        frame_size = av_get_audio_frame_duration2(st->codecpar, pkt->size);
+        if (st->internal->avctx_inited)
+            frame_size = av_get_audio_frame_duration(st->internal->avctx, pkt->size);
+        else
+            frame_size = av_get_audio_frame_duration2(st->codecpar, pkt->size);
         if (frame_size <= 0 || st->codecpar->sample_rate <= 0)
             break;
         *pnum = frame_size;
