@@ -1773,7 +1773,7 @@ static int mov_write_video_tag(AVIOContext *pb, MOVMuxContext *mov, MOVTrack *tr
     if (track->par->codec_id != AV_CODEC_ID_H264 &&
         track->par->codec_id != AV_CODEC_ID_MPEG4 &&
         track->par->codec_id != AV_CODEC_ID_DNXHD) {
-	    int field_order = track->par->field_order;
+        int field_order = track->par->field_order;
 
 #if FF_API_LAVF_AVCTX
     FF_DISABLE_DEPRECATION_WARNINGS
