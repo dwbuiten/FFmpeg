@@ -1054,9 +1054,16 @@ int av_interleaved_write_frame(AVFormatContext *s, AVPacket *pkt)
             }
         }
 
-        av_apply_bitstream_filters(st->codec, pkt, st->internal->bsfc);
+        av_apply_bitstream_filters(st->internal->avctx, pkt, st->internal->bsfc);
         if (pkt->size == 0 && pkt->side_data_elems == 0)
             return 0;
+        if (!st->codecpar->extradata && st->internal->avctx->extradata) {
+            int eret = ff_alloc_extradata(st->codecpar, st->internal->avctx->extradata_size);
+            if (eret < 0)
+                return AVERROR(ENOMEM);
+            st->codecpar->extradata_size = st->internal->avctx->extradata_size;
+            memcpy(st->codecpar->extradata, st->internal->avctx->extradata, st->internal->avctx->extradata_size);
+        }
 
         if (s->debug & FF_FDEBUG_TS)
             av_log(s, AV_LOG_TRACE, "av_interleaved_write_frame size:%d dts:%s pts:%s\n",
