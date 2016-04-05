@@ -851,7 +851,7 @@ void ff_compute_frame_duration(AVFormatContext *s, int *pnum, int *pden, AVStrea
 {
     AVRational codec_framerate = s->iformat ? st->internal->avctx->framerate :
                                               av_mul_q(av_inv_q(st->internal->avctx->time_base), (AVRational){1, st->internal->avctx->ticks_per_frame});
-    int frame_size;
+    int frame_size, sample_rate;
 
     *pnum = 0;
     *pden = 0;
@@ -885,14 +885,17 @@ void ff_compute_frame_duration(AVFormatContext *s, int *pnum, int *pden, AVStrea
         }
         break;
     case AVMEDIA_TYPE_AUDIO:
-        if (st->internal->avctx_inited)
+        if (st->internal->avctx_inited) {
             frame_size = av_get_audio_frame_duration(st->internal->avctx, pkt->size);
-        else
+            sample_rate = st->internal->avctx->sample_rate;
+        } else {
             frame_size = av_get_audio_frame_duration2(st->codecpar, pkt->size);
-        if (frame_size <= 0 || st->codecpar->sample_rate <= 0)
+            sample_rate = st->codecpar->sample_rate;
+        }
+        if (frame_size <= 0 || sample_rate <= 0)
             break;
         *pnum = frame_size;
-        *pden = st->codecpar->sample_rate;
+        *pden = sample_rate;
         break;
     default:
         break;
