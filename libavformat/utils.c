@@ -3724,6 +3724,13 @@ FF_ENABLE_DEPRECATION_WARNINGS
     for (i = 0; i < ic->nb_streams; i++) {
         const char *errmsg;
         st = ic->streams[i];
+
+        /* if no packet was ever seen, update context now for has_codec_parameters */
+        if (!st->internal->avctx_inited) {
+            ret = avcodec_parameters_to_context(st->internal->avctx, st->codecpar);
+            if (ret < 0)
+                goto find_stream_info_err;
+        }
         if (!has_codec_parameters(st, &errmsg)) {
             char buf[256];
             avcodec_string(buf, sizeof(buf), st->internal->avctx, 0);
