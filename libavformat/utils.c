@@ -3748,12 +3748,12 @@ FF_ENABLE_DEPRECATION_WARNINGS
     /* update the stream parameters from the internal codec contexts */
     for (i = 0; i < ic->nb_streams; i++) {
         st = ic->streams[i];
-        if (!st->internal->avctx_inited)
-            continue;
 
-        ret = avcodec_parameters_from_context(st->codecpar, st->internal->avctx);
-        if (ret < 0)
-            goto find_stream_info_err;
+        if (st->internal->avctx_inited) {
+            ret = avcodec_parameters_from_context(st->codecpar, st->internal->avctx);
+            if (ret < 0)
+                goto find_stream_info_err;
+        }
 
 #if FF_API_LAVF_AVCTX
 FF_DISABLE_DEPRECATION_WARNINGS
