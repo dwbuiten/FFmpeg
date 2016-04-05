@@ -3726,7 +3726,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
         st = ic->streams[i];
         if (!has_codec_parameters(st, &errmsg)) {
             char buf[256];
-            avcodec_string(buf, sizeof(buf), avctx, 0);
+            avcodec_string(buf, sizeof(buf), st->internal->avctx, 0);
             av_log(ic, AV_LOG_WARNING,
                    "Could not find codec parameters for stream %d (%s): %s\n"
                    "Consider increasing the value for the 'analyzeduration' and 'probesize' options\n",
