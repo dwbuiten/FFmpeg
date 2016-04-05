@@ -5116,11 +5116,14 @@ static int mov_create_dvd_sub_decoder_specific_info(MOVTrack *track,
     return 0;
 }
 
-static int mov_init(AVFormatContext *s)
+static int mov_write_header(AVFormatContext *s)
 {
+    AVIOContext *pb = s->pb;
     MOVMuxContext *mov = s->priv_data;
-    AVDictionaryEntry *global_tcr = av_dict_get(s->metadata, "timecode", NULL, 0);
-    int i;
+    AVDictionaryEntry *t, *global_tcr = av_dict_get(s->metadata, "timecode", NULL, 0);
+    int i, ret, hint_track = 0, tmcd_track = 0;
+
+    mov->fc = s;
 
     /* Default mode == MP4 */
     mov->mode = MODE_MP4;
@@ -5170,9 +5173,40 @@ static int mov_init(AVFormatContext *s)
                 mov->use_editlist = 0;
         }
     }
+    if (mov->flags & FF_MOV_FLAG_EMPTY_MOOV &&
+        !(mov->flags & FF_MOV_FLAG_DELAY_MOOV) && mov->use_editlist)
+        av_log(s, AV_LOG_WARNING, "No meaningful edit list will be written when using empty_moov without delay_moov\n");
 
     if (!mov->use_editlist && s->avoid_negative_ts == AVFMT_AVOID_NEG_TS_AUTO)
         s->avoid_negative_ts = AVFMT_AVOID_NEG_TS_MAKE_ZERO;
+
+    /* Clear the omit_tfhd_offset flag if default_base_moof is set;
+     * if the latter is set that's enough and omit_tfhd_offset doesn't
+     * add anything extra on top of that. */
+    if (mov->flags & FF_MOV_FLAG_OMIT_TFHD_OFFSET &&
+        mov->flags & FF_MOV_FLAG_DEFAULT_BASE_MOOF)
+        mov->flags &= ~FF_MOV_FLAG_OMIT_TFHD_OFFSET;
+
+    if (mov->frag_interleave &&
+        mov->flags & (FF_MOV_FLAG_OMIT_TFHD_OFFSET | FF_MOV_FLAG_SEPARATE_MOOF)) {
+        av_log(s, AV_LOG_ERROR,
+               "Sample interleaving in fragments is mutually exclusive with "
+               "omit_tfhd_offset and separate_moof\n");
+        return AVERROR(EINVAL);
+    }
+
+    /* Non-seekable output is ok if using fragmentation. If ism_lookahead
+     * is enabled, we don't support non-seekable output at all. */
+    if (!s->pb->seekable &&
+        (!(mov->flags & FF_MOV_FLAG_FRAGMENT) || mov->ism_lookahead)) {
+        av_log(s, AV_LOG_ERROR, "muxer does not support non seekable output\n");
+        return AVERROR(EINVAL);
+    }
+
+    if (!(mov->flags & FF_MOV_FLAG_DELAY_MOOV)) {
+        if ((ret = mov_write_identification(pb, s)) < 0)
+            return ret;
+    }
 
     mov->nb_streams = s->nb_streams;
     if (mov->mode & (MODE_MP4|MODE_MOV|MODE_IPOD) && s->nb_chapters)
@@ -5180,7 +5214,7 @@ static int mov_init(AVFormatContext *s)
 
     if (mov->flags & FF_MOV_FLAG_RTP_HINT) {
         /* Add hint tracks for each audio and video stream */
-        mov->hint_track = mov->nb_streams;
+        hint_track = mov->nb_streams;
         for (i = 0; i < s->nb_streams; i++) {
             AVStream *st = s->streams[i];
             if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO ||
@@ -5191,7 +5225,7 @@ static int mov_init(AVFormatContext *s)
     }
 
     if (mov->mode == MODE_MOV || mov->mode == MODE_MP4) {
-        mov->tmcd_track = mov->nb_streams;
+        tmcd_track = mov->nb_streams;
 
         /* +1 tmcd track for each video stream with a timecode */
         for (i = 0; i < s->nb_streams; i++) {
@@ -5221,78 +5255,6 @@ static int mov_init(AVFormatContext *s)
     mov->tracks = av_mallocz_array((mov->nb_streams + 1), sizeof(*mov->tracks));
     if (!mov->tracks)
         return AVERROR(ENOMEM);
-
-    for (i = 0; i < s->nb_streams; i++) {
-        AVStream *st= s->streams[i];
-        MOVTrack *track= &mov->tracks[i];
-
-        if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-            if (mov->video_track_timescale) {
-                track->timescale = mov->video_track_timescale;
-            } else {
-                track->timescale = st->time_base.den;
-                while(track->timescale < 10000)
-                    track->timescale *= 2;
-            }
-        } else if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-            track->timescale = st->codecpar->sample_rate;
-        } else if (st->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) {
-            track->timescale = st->time_base.den;
-        } else if (st->codecpar->codec_type == AVMEDIA_TYPE_DATA) {
-            track->timescale = st->time_base.den;
-        } else {
-            track->timescale = MOV_TIMESCALE;
-        }
-
-        if (mov->mode == MODE_ISM)
-            track->timescale = 10000000;
-
-        avpriv_set_pts_info(st, 64, 1, track->timescale);
-    }
-
-	return 0;
-}
-
-static int mov_write_header(AVFormatContext *s)
-{
-    AVIOContext *pb = s->pb;
-    MOVMuxContext *mov = s->priv_data;
-    AVDictionaryEntry *t, *global_tcr = av_dict_get(s->metadata, "timecode", NULL, 0);
-    int i, ret, hint_track = mov->hint_track, tmcd_track = mov->tmcd_track;
-
-    mov->fc = s;
-
-    if (mov->flags & FF_MOV_FLAG_EMPTY_MOOV &&
-        !(mov->flags & FF_MOV_FLAG_DELAY_MOOV) && mov->use_editlist)
-        av_log(s, AV_LOG_WARNING, "No meaningful edit list will be written when using empty_moov without delay_moov\n");
-
-    /* Clear the omit_tfhd_offset flag if default_base_moof is set;
-     * if the latter is set that's enough and omit_tfhd_offset doesn't
-     * add anything extra on top of that. */
-    if (mov->flags & FF_MOV_FLAG_OMIT_TFHD_OFFSET &&
-        mov->flags & FF_MOV_FLAG_DEFAULT_BASE_MOOF)
-        mov->flags &= ~FF_MOV_FLAG_OMIT_TFHD_OFFSET;
-
-    if (mov->frag_interleave &&
-        mov->flags & (FF_MOV_FLAG_OMIT_TFHD_OFFSET | FF_MOV_FLAG_SEPARATE_MOOF)) {
-        av_log(s, AV_LOG_ERROR,
-               "Sample interleaving in fragments is mutually exclusive with "
-               "omit_tfhd_offset and separate_moof\n");
-        return AVERROR(EINVAL);
-    }
-
-    /* Non-seekable output is ok if using fragmentation. If ism_lookahead
-     * is enabled, we don't support non-seekable output at all. */
-    if (!s->pb->seekable &&
-        (!(mov->flags & FF_MOV_FLAG_FRAGMENT) || mov->ism_lookahead)) {
-        av_log(s, AV_LOG_ERROR, "muxer does not support non seekable output\n");
-        return AVERROR(EINVAL);
-    }
-
-    if (!(mov->flags & FF_MOV_FLAG_DELAY_MOOV)) {
-        if ((ret = mov_write_identification(pb, s)) < 0)
-            return ret;
-    }
 
     if (mov->encryption_scheme_str != NULL && strcmp(mov->encryption_scheme_str, "none") != 0) {
         if (strcmp(mov->encryption_scheme_str, "cenc-aes-ctr") == 0) {
@@ -5355,6 +5317,13 @@ static int mov_write_header(AVFormatContext *s)
                 }
                 track->height = track->tag >> 24 == 'n' ? 486 : 576;
             }
+            if (mov->video_track_timescale) {
+                track->timescale = mov->video_track_timescale;
+            } else {
+                track->timescale = st->time_base.den;
+                while(track->timescale < 10000)
+                    track->timescale *= 2;
+            }
             if (st->codecpar->width > 65535 || st->codecpar->height > 65535) {
                 av_log(s, AV_LOG_ERROR, "Resolution %dx%d too large for mov/mp4\n", st->codecpar->width, st->codecpar->height);
                 ret = AVERROR(EINVAL);
@@ -5380,6 +5349,7 @@ static int mov_write_header(AVFormatContext *s)
                         pix_fmt == AV_PIX_FMT_MONOBLACK;
             }
         } else if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+            track->timescale = st->codecpar->sample_rate;
             if (!st->codecpar->frame_size && !av_get_bits_per_sample(st->codecpar->codec_id)) {
                 av_log(s, AV_LOG_WARNING, "track %d: codec frame size is not set\n", i);
                 track->audio_vbr = 1;
@@ -5413,9 +5383,21 @@ static int mov_write_header(AVFormatContext *s)
                            i, track->par->sample_rate);
                 }
             }
+        } else if (st->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) {
+            track->timescale = st->time_base.den;
+        } else if (st->codecpar->codec_type == AVMEDIA_TYPE_DATA) {
+            track->timescale = st->time_base.den;
+        } else {
+            track->timescale = MOV_TIMESCALE;
         }
         if (!track->height)
             track->height = st->codecpar->height;
+        /* The ism specific timescale isn't mandatory, but is assumed by
+         * some tools, such as mp4split. */
+        if (mov->mode == MODE_ISM)
+            track->timescale = 10000000;
+
+        avpriv_set_pts_info(st, 64, 1, track->timescale);
 
         /* copy extradata if it exists */
         if (st->codecpar->extradata_size) {
@@ -5796,7 +5778,6 @@ AVOutputFormat ff_mov_muxer = {
     .audio_codec       = AV_CODEC_ID_AAC,
     .video_codec       = CONFIG_LIBX264_ENCODER ?
                          AV_CODEC_ID_H264 : AV_CODEC_ID_MPEG4,
-    .init              = mov_init,
     .write_header      = mov_write_header,
     .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
@@ -5816,7 +5797,6 @@ AVOutputFormat ff_tgp_muxer = {
     .priv_data_size    = sizeof(MOVMuxContext),
     .audio_codec       = AV_CODEC_ID_AMR_NB,
     .video_codec       = AV_CODEC_ID_H263,
-    .init              = mov_init,
     .write_header      = mov_write_header,
     .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
@@ -5836,7 +5816,6 @@ AVOutputFormat ff_mp4_muxer = {
     .audio_codec       = AV_CODEC_ID_AAC,
     .video_codec       = CONFIG_LIBX264_ENCODER ?
                          AV_CODEC_ID_H264 : AV_CODEC_ID_MPEG4,
-    .init              = mov_init,
     .write_header      = mov_write_header,
     .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
@@ -5855,7 +5834,6 @@ AVOutputFormat ff_psp_muxer = {
     .audio_codec       = AV_CODEC_ID_AAC,
     .video_codec       = CONFIG_LIBX264_ENCODER ?
                          AV_CODEC_ID_H264 : AV_CODEC_ID_MPEG4,
-    .init              = mov_init,
     .write_header      = mov_write_header,
     .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
@@ -5873,7 +5851,6 @@ AVOutputFormat ff_tg2_muxer = {
     .priv_data_size    = sizeof(MOVMuxContext),
     .audio_codec       = AV_CODEC_ID_AMR_NB,
     .video_codec       = AV_CODEC_ID_H263,
-    .init              = mov_init,
     .write_header      = mov_write_header,
     .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
@@ -5892,7 +5869,6 @@ AVOutputFormat ff_ipod_muxer = {
     .priv_data_size    = sizeof(MOVMuxContext),
     .audio_codec       = AV_CODEC_ID_AAC,
     .video_codec       = AV_CODEC_ID_H264,
-    .init              = mov_init,
     .write_header      = mov_write_header,
     .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
@@ -5911,7 +5887,6 @@ AVOutputFormat ff_ismv_muxer = {
     .priv_data_size    = sizeof(MOVMuxContext),
     .audio_codec       = AV_CODEC_ID_AAC,
     .video_codec       = AV_CODEC_ID_H264,
-    .init              = mov_init,
     .write_header      = mov_write_header,
     .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
@@ -5930,7 +5905,6 @@ AVOutputFormat ff_f4v_muxer = {
     .priv_data_size    = sizeof(MOVMuxContext),
     .audio_codec       = AV_CODEC_ID_AAC,
     .video_codec       = AV_CODEC_ID_H264,
-    .init              = mov_init,
     .write_header      = mov_write_header,
     .write_packet      = mov_write_packet,
     .write_trailer     = mov_write_trailer,
