@@ -3753,9 +3753,16 @@ FF_ENABLE_DEPRECATION_WARNINGS
         st = ic->streams[i];
 
         if (st->internal->avctx_inited) {
+            int orig_w = st->codecpar->width;
+            int orig_h = st->codecpar->height;
             ret = avcodec_parameters_from_context(st->codecpar, st->internal->avctx);
             if (ret < 0)
                 goto find_stream_info_err;
+            // The decoder might reduce the video size by the lowres factor.
+            if (st->internal->avctx->lowres && orig_w) {
+                st->codecpar->width = orig_w;
+                st->codecpar->height = orig_h;
+            }
         }
 
 #if FF_API_LAVF_AVCTX
@@ -3763,6 +3770,16 @@ FF_DISABLE_DEPRECATION_WARNINGS
         ret = avcodec_parameters_to_context(st->codec, st->codecpar);
         if (ret < 0)
             goto find_stream_info_err;
+
+        // The old API (AVStream.codec) "requires" the resolution to be adjusted
+        // by the lowres factor.
+        if (st->internal->avctx->lowres && st->internal->avctx->width) {
+            st->codec->lowres = st->internal->avctx->lowres;
+            st->codec->width = st->internal->avctx->width;
+            st->codec->height = st->internal->avctx->height;
+            st->codec->coded_width = st->internal->avctx->coded_width;
+            st->codec->coded_height = st->internal->avctx->coded_height;
+        }
 
         if (st->codec->codec_tag != MKTAG('t','m','c','d'))
             st->codec->time_base = st->internal->avctx->time_base;
