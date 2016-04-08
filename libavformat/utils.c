@@ -1464,12 +1464,14 @@ static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
         /* update context if required */
         if (st->internal->need_context_update) {
             if (avcodec_is_open(st->internal->avctx)) {
-                av_log(s, AV_LOG_DEBUG, "Demuxer context update while decoder is open is not supported\n");
-            } else {
-                ret = avcodec_parameters_to_context(st->internal->avctx, st->codecpar);
-                if (ret < 0)
-                    return ret;
+                av_log(s, AV_LOG_DEBUG, "Demuxer context update while decoder is open, closing and trying to re-open\n");
+                avcodec_close(st->internal->avctx);
+                st->info->found_decoder = 0;
             }
+
+            ret = avcodec_parameters_to_context(st->internal->avctx, st->codecpar);
+            if (ret < 0)
+                return ret;
 
             st->internal->need_context_update = 0;
         }
