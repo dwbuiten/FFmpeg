@@ -766,10 +766,13 @@ static void mpegts_find_stream_type(AVStream *st,
 {
     for (; types->stream_type; types++)
         if (stream_type == types->stream_type) {
-            st->codecpar->codec_type = types->codec_type;
-            st->codecpar->codec_id   = types->codec_id;
+            if (st->codecpar->codec_type != types->codec_type ||
+                st->codecpar->codec_id   != types->codec_id) {
+                st->codecpar->codec_type = types->codec_type;
+                st->codecpar->codec_id   = types->codec_id;
+                st->internal->need_context_update = 1;
+            }
             st->request_probe        = 0;
-            st->internal->need_context_update = 1;
             return;
         }
 }
@@ -778,7 +781,8 @@ static int mpegts_set_stream_info(AVStream *st, PESContext *pes,
                                   uint32_t stream_type, uint32_t prog_reg_desc)
 {
     int old_codec_type = st->codecpar->codec_type;
-    int old_codec_id  = st->codecpar->codec_id;
+    int old_codec_id   = st->codecpar->codec_id;
+    int old_codec_tag  = st->codecpar->codec_tag;
 
     if (avcodec_is_open(st->internal->avctx)) {
         av_log(pes->stream, AV_LOG_DEBUG, "cannot set stream info, internal codec is open\n");
@@ -847,7 +851,10 @@ static int mpegts_set_stream_info(AVStream *st, PESContext *pes,
     }
 
     /* queue a context update if properties changed */
-    st->internal->need_context_update = 1;
+    if (old_codec_type != st->codecpar->codec_type ||
+        old_codec_id   != st->codecpar->codec_id   ||
+        old_codec_tag  != st->codecpar->codec_tag)
+        st->internal->need_context_update = 1;
 
     return 0;
 }
