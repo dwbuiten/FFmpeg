@@ -2996,6 +2996,7 @@ static int prepare_sdp_description(FFServerStream *stream, uint8_t **pbuffer,
     for(i = 0; i < stream->nb_streams; i++) {
         avc->streams[i] = &avs[i];
         avc->streams[i]->codec = stream->streams[i]->codec;
+        avcodec_parameters_from_context(stream->streams[i]->codecpar, stream->streams[i]->codec);
         avc->streams[i]->codecpar = stream->streams[i]->codecpar;
     }
     *pbuffer = av_mallocz(2048);
