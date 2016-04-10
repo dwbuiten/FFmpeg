@@ -286,7 +286,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
 
 #if FF_API_LAVF_CODEC_TB
 FF_DISABLE_DEPRECATION_WARNINGS
-        if (!st->codec->time_base.num && st->codec->time_base.num) {
+        if (!st->time_base.num && st->codec->time_base.num) {
             av_log(s, AV_LOG_WARNING, "Using AVStream.codec.time_base as a "
                    "timebase hint to the muxer is deprecated. Set "
                    "AVStream.time_base instead.\n");
