@@ -853,6 +853,13 @@ void ff_compute_frame_duration(AVFormatContext *s, int *pnum, int *pden, AVStrea
                                               av_mul_q(av_inv_q(st->internal->avctx->time_base), (AVRational){1, st->internal->avctx->ticks_per_frame});
     int frame_size, sample_rate;
 
+#if FF_API_LAVF_AVCTX
+FF_DISABLE_DEPRECATION_WARNINGS
+    if ((!codec_framerate.den || !codec_framerate.num) && st->codec->time_base.den && st->codec->time_base.num)
+        codec_framerate = av_mul_q(av_inv_q(st->codec->time_base), (AVRational){1, st->codec->ticks_per_frame});
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
+
     *pnum = 0;
     *pden = 0;
     switch (st->codecpar->codec_type) {

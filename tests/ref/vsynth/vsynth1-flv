@@ -1,4 +1,4 @@
-0c2f53e7914ee65f0c159f07368f7777 *tests/data/fate/vsynth1-flv.flv
+7f6ece1acc4163e33a982dd77dfad58a *tests/data/fate/vsynth1-flv.flv
 636264 tests/data/fate/vsynth1-flv.flv
 00ffbd9dac9233e53f4a4a19589a0efe *tests/data/fate/vsynth1-flv.out.rawvideo
 stddev:    8.02 PSNR: 30.04 MAXDIFF:  105 bytes:  7603200/  7603200
