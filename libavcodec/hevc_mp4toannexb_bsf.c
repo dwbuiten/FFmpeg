@@ -34,29 +34,9 @@
 typedef struct HEVCBSFContext {
     uint8_t  length_size;
     int      extradata_parsed;
-<<<<<<< HEAD
-
-    int logged_nonmp4_warning;
-
-    /* When private_spspps is zero then spspps_buf points to global extradata
-       and bsf does replace a global extradata to own-allocated version (default
-       behaviour).
-       When private_spspps is non-zero the bsf uses a private version of spspps buf.
-       This mode necessary when bsf uses in decoder, else bsf has issues after
-       decoder re-initialization. Use the "private_spspps_buf" argument to
-       activate this mode.
-     */
-    int      private_spspps;
-    uint8_t *spspps_buf;
-    uint32_t spspps_size;
-} HEVCBSFContext;
-
-static int hevc_extradata_to_annexb(HEVCBSFContext* ctx, AVCodecContext *avctx)
-=======
 } HEVCBSFContext;
 
 static int hevc_extradata_to_annexb(AVBSFContext *ctx)
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
 {
     GetByteContext gb;
     int length_size, num_arrays, i, j;
@@ -101,19 +81,9 @@ static int hevc_extradata_to_annexb(AVBSFContext *ctx)
         }
     }
 
-<<<<<<< HEAD
-    if (!ctx->private_spspps) {
-        av_freep(&avctx->extradata);
-        avctx->extradata      = new_extradata;
-        avctx->extradata_size = new_extradata_size;
-    }
-    ctx->spspps_buf  = new_extradata;
-    ctx->spspps_size = new_extradata_size;
-=======
     av_freep(&ctx->par_out->extradata);
     ctx->par_out->extradata      = new_extradata;
     ctx->par_out->extradata_size = new_extradata_size;
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
 
     if (!new_extradata_size)
         av_log(ctx, AV_LOG_WARNING, "No parameter sets in the extradata\n");
@@ -154,29 +124,6 @@ static int hevc_mp4toannexb_filter(AVBSFContext *ctx, AVPacket *out)
     int got_irap = 0;
     int i, ret = 0;
 
-<<<<<<< HEAD
-    if (!ctx->extradata_parsed) {
-        if (avctx->extradata_size < MIN_HEVCC_LENGTH ||
-            AV_RB24(avctx->extradata) == 1           ||
-            AV_RB32(avctx->extradata) == 1) {
-            if (!ctx->logged_nonmp4_warning) {
-                av_log(avctx, AV_LOG_VERBOSE,
-                       "The input looks like it is Annex B already\n");
-                ctx->logged_nonmp4_warning = 1;
-            }
-            *poutbuf      = (uint8_t *)buf;
-            *poutbuf_size = buf_size;
-            return 0;
-        }
-        if (args && strstr(args, "private_spspps_buf"))
-            ctx->private_spspps = 1;
-
-        ret = hevc_extradata_to_annexb(ctx, avctx);
-        if (ret < 0)
-            return ret;
-        ctx->length_size      = ret;
-        ctx->extradata_parsed = 1;
-=======
     ret = ff_bsf_get_packet(ctx, &in);
     if (ret < 0)
         return ret;
@@ -185,7 +132,6 @@ static int hevc_mp4toannexb_filter(AVBSFContext *ctx, AVPacket *out)
         av_packet_move_ref(out, in);
         av_packet_free(&in);
         return 0;
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
     }
 
     bytestream2_init(&gb, in->data, in->size);
@@ -203,11 +149,7 @@ static int hevc_mp4toannexb_filter(AVBSFContext *ctx, AVPacket *out)
         /* prepend extradata to IRAP frames */
         is_irap       = nalu_type >= 16 && nalu_type <= 23;
         add_extradata = is_irap && !got_irap;
-<<<<<<< HEAD
-        extra_size    = add_extradata * ctx->spspps_size;
-=======
         extra_size    = add_extradata * ctx->par_out->extradata_size;
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
         got_irap     |= is_irap;
 
         if (SIZE_MAX - nalu_size < 4 ||
@@ -223,16 +165,9 @@ static int hevc_mp4toannexb_filter(AVBSFContext *ctx, AVPacket *out)
             goto fail;
 
         if (add_extradata)
-<<<<<<< HEAD
-            memcpy(out + out_size, ctx->spspps_buf, extra_size);
-        AV_WB32(out + out_size + extra_size, 1);
-        bytestream2_get_buffer(&gb, out + out_size + 4 + extra_size, nalu_size);
-        out_size += 4 + nalu_size + extra_size;
-=======
             memcpy(out->data + prev_size, ctx->par_out->extradata, extra_size);
         AV_WB32(out->data + prev_size + extra_size, 1);
         bytestream2_get_buffer(&gb, out->data + prev_size + 4 + extra_size, nalu_size);
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
     }
 
     ret = av_packet_copy_props(out, in);
@@ -247,20 +182,6 @@ fail:
     return ret;
 }
 
-<<<<<<< HEAD
-static void hevc_mp4toannexb_close(AVBitStreamFilterContext *bsfc)
-{
-    HEVCBSFContext *ctx = bsfc->priv_data;
-    if (ctx->private_spspps)
-        av_freep(&ctx->spspps_buf);
-}
-
-AVBitStreamFilter ff_hevc_mp4toannexb_bsf = {
-    "hevc_mp4toannexb",
-    sizeof(HEVCBSFContext),
-    hevc_mp4toannexb_filter,
-    hevc_mp4toannexb_close,
-=======
 static const enum AVCodecID codec_ids[] = {
     AV_CODEC_ID_HEVC, AV_CODEC_ID_NONE,
 };
@@ -271,5 +192,4 @@ const AVBitStreamFilter ff_hevc_mp4toannexb_bsf = {
     .init           = hevc_mp4toannexb_init,
     .filter         = hevc_mp4toannexb_filter,
     .codec_ids      = codec_ids,
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
 };
