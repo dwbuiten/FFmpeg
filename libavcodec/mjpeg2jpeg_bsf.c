@@ -92,18 +92,18 @@ static int mjpeg2jpeg_filter(AVBSFContext *ctx, AVPacket *out)
         ret = AVERROR_INVALIDDATA;
         goto fail;
     }
-    if (AV_RB16(buf) != 0xffd8) {
-        av_log(avctx, AV_LOG_ERROR, "input is not MJPEG\n");
+    if (AV_RB16(in->data) != 0xffd8) {
+        av_log(ctx, AV_LOG_ERROR, "input is not MJPEG\n");
         ret = AVERROR_INVALIDDATA;
         goto fail;
     }
-    if (buf[2] == 0xff && buf[3] == APP0) {
-        input_skip = (buf[4] << 8) + buf[5] + 4;
+    if (in->data[2] == 0xff && in->data[3] == APP0) {
+        input_skip = (in->data[4] << 8) + in->data[5] + 4;
     } else {
         input_skip = 2;
     }
-    if (buf_size < input_skip) {
-        av_log(avctx, AV_LOG_ERROR, "input is truncated\n");
+    if (in->size < input_skip) {
+        av_log(ctx, AV_LOG_ERROR, "input is truncated\n");
         ret = AVERROR_INVALIDDATA;
         goto fail;
     }
