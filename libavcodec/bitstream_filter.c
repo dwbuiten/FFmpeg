@@ -45,6 +45,7 @@ void av_register_bitstream_filter(AVBitStreamFilter *bsf)
 
 typedef struct BSFCompatContext {
     AVBSFContext *ctx;
+    int extradata_updated;
 } BSFCompatContext;
 
 AVBitStreamFilterContext *av_bitstream_filter_init(const char *name)
@@ -81,10 +82,12 @@ fail:
 
 void av_bitstream_filter_close(AVBitStreamFilterContext *bsfc)
 {
+    BSFCompatContext *priv;
+
     if (!bsfc)
         return;
 
-    BSFCompatContext *priv = bsfc->priv_data;
+    priv = bsfc->priv_data;
 
     av_bsf_free(&priv->ctx);
     av_freep(&bsfc->priv_data);
@@ -114,17 +117,6 @@ int av_bitstream_filter_filter(AVBitStreamFilterContext *bsfc,
         ret = av_bsf_init(priv->ctx);
         if (ret < 0)
             return ret;
-
-        if (priv->ctx->par_out->extradata_size && (!args || !strstr(args, "private_spspps_buf"))) {
-            av_freep(&avctx->extradata);
-            avctx->extradata_size = 0;
-            avctx->extradata = av_mallocz(priv->ctx->par_out->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
-            if (!avctx->extradata)
-                return AVERROR(ENOMEM);
-            memcpy(avctx->extradata, priv->ctx->par_out->extradata,
-                   priv->ctx->par_out->extradata_size);
-            avctx->extradata_size = priv->ctx->par_out->extradata_size;
-        }
     }
 
     pkt.data = buf;
@@ -158,6 +150,21 @@ int av_bitstream_filter_filter(AVBitStreamFilterContext *bsfc,
     while (ret >= 0) {
         ret = av_bsf_receive_packet(priv->ctx, &pkt);
         av_packet_unref(&pkt);
+    }
+
+    if (!priv->extradata_updated) {
+        /* update extradata in avctx from the output codec parameters */
+        if (priv->ctx->par_out->extradata_size && (!args || !strstr(args, "private_spspps_buf"))) {
+            av_freep(&avctx->extradata);
+            avctx->extradata_size = 0;
+            avctx->extradata = av_mallocz(priv->ctx->par_out->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
+            if (!avctx->extradata)
+                return AVERROR(ENOMEM);
+            memcpy(avctx->extradata, priv->ctx->par_out->extradata, priv->ctx->par_out->extradata_size);
+            avctx->extradata_size = priv->ctx->par_out->extradata_size;
+        }
+
+        priv->extradata_updated = 1;
     }
 
     return 1;
