@@ -27,15 +27,19 @@
 extern const AVBitStreamFilter ff_aac_adtstoasc_bsf;
 extern const AVBitStreamFilter ff_chomp_bsf;
 extern const AVBitStreamFilter ff_dump_extradata_bsf;
+extern const AVBitStreamFilter ff_dca_core_bsf;
 extern const AVBitStreamFilter ff_h264_mp4toannexb_bsf;
 extern const AVBitStreamFilter ff_hevc_mp4toannexb_bsf;
 extern const AVBitStreamFilter ff_imx_dump_header_bsf;
 extern const AVBitStreamFilter ff_mjpeg2jpeg_bsf;
 extern const AVBitStreamFilter ff_mjpega_dump_header_bsf;
+extern const AVBitStreamFilter ff_mp3_header_decompress_bsf;
+extern const AVBitStreamFilter ff_mpeg4_unpack_bframes_bsf;
 extern const AVBitStreamFilter ff_mov2textsub_bsf;
-extern const AVBitStreamFilter ff_text2movsub_bsf;
 extern const AVBitStreamFilter ff_noise_bsf;
 extern const AVBitStreamFilter ff_remove_extradata_bsf;
+extern const AVBitStreamFilter ff_text2movsub_bsf;
+extern const AVBitStreamFilter ff_vp9_superframe_bsf;
 
 static const AVBitStreamFilter *bitstream_filters[] = {
 #if CONFIG_AAC_ADTSTOASC_BSF
@@ -46,6 +50,9 @@ static const AVBitStreamFilter *bitstream_filters[] = {
 #endif
 #if CONFIG_DUMP_EXTRADATA_BSF
     &ff_dump_extradata_bsf,
+#endif
+#if CONFIG_DCA_CORE_BSF
+    &ff_dca_core_bsf,
 #endif
 #if CONFIG_H264_MP4TOANNEXB_BSF
     &ff_h264_mp4toannexb_bsf,
@@ -60,19 +67,28 @@ static const AVBitStreamFilter *bitstream_filters[] = {
     &ff_mjpeg2jpeg_bsf,
 #endif
 #if CONFIG_MJPEGA_DUMP_HEADER_BSF
-    &ff_mjpeg2jpeg_bsf,
+    &ff_mjpega_dump_header_bsf,
+#endif
+#if CONFIG_MP3_HEADER_DECOMPRESS_BSF
+    &ff_mp3_header_decompress_bsf,
+#endif
+#if CONFIG_MPEG4_UNPACK_BFRAMES_BSF
+    &ff_mpeg4_unpack_bframes_bsf,
 #endif
 #if CONFIG_MOV2TEXTSUB_BSF
     &ff_mov2textsub_bsf,
-#endif
-#if CONFIG_TEXT2MOVSUB_BSF
-    &ff_text2movsub_bsf,
 #endif
 #if CONFIG_NOISE_BSF
     &ff_noise_bsf,
 #endif
 #if CONFIG_REMOVE_EXTRADATA_BSF
     &ff_remove_extradata_bsf,
+#endif
+#if CONFIG_TEXT2MOVSUB_BSF
+    &ff_text2movsub_bsf,
+#endif
+#if CONFIG_VP9_SUPERFRAME_BSF
+    &ff_vp9_superframe_bsf,
 #endif
     NULL,
 };
