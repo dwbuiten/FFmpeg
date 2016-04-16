@@ -130,7 +130,12 @@ fail:
     return ret;
 }
 
+static const enum AVCodecID codec_ids[] = {
+    AV_CODEC_ID_MJPEG, AV_CODEC_ID_NONE,
+};
+
 const AVBitStreamFilter ff_mjpeg2jpeg_bsf = {
     .name           = "mjpeg2jpeg",
     .filter         = mjpeg2jpeg_filter,
+    .codec_ids      = codec_ids,
 };
