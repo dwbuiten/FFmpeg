@@ -156,6 +156,7 @@ static int vp9_superframe_filter(AVBSFContext *ctx, AVPacket *out)
             goto done;
         }
         memcpy(s->cache[s->n_cache++].data, in->data, in->size);
+        res = AVERROR(EAGAIN);
         goto done;
     }
     av_assert0(s->n_cache > 0);
