@@ -115,7 +115,7 @@ int av_bitstream_filter_filter(AVBitStreamFilterContext *bsfc,
         if (ret < 0)
             return ret;
 
-        if (priv->ctx->par_out->extradata_size) {
+        if (priv->ctx->par_out->extradata_size && (!args || !strstr(args, "private_spspps_buf"))) {
             av_freep(&avctx->extradata);
             avctx->extradata_size = 0;
             avctx->extradata = av_mallocz(priv->ctx->par_out->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
