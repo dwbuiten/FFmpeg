@@ -35,18 +35,6 @@ typedef struct H264BSFContext {
     uint8_t  idr_sps_seen;
     uint8_t  idr_pps_seen;
     int      extradata_parsed;
-
-    /* When private_spspps is zero then spspps_buf points to global extradata
-       and bsf does replace a global extradata to own-allocated version (default
-       behaviour).
-       When private_spspps is non-zero the bsf uses a private version of spspps buf.
-       This mode necessary when bsf uses in decoder, else bsf has issues after
-       decoder re-initialization. Use the "private_spspps_buf" argument to
-       activate this mode.
-     */
-    int      private_spspps;
-    uint8_t *spspps_buf;
-    uint32_t spspps_size;
 } H264BSFContext;
 
 static int alloc_and_copy(AVPacket *out,
@@ -75,12 +63,9 @@ static int alloc_and_copy(AVPacket *out,
     return 0;
 }
 
-<<<<<<< HEAD
-static int h264_extradata_to_annexb(H264BSFContext *ctx, AVCodecContext *avctx, const int padding)
-=======
 static int h264_extradata_to_annexb(AVBSFContext *ctx, const int padding)
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
 {
+    H264BSFContext *s = ctx->priv_data;
     uint16_t unit_size;
     uint64_t total_size                 = 0;
     uint8_t *out                        = NULL, unit_nb, sps_done = 0,
@@ -89,14 +74,14 @@ static int h264_extradata_to_annexb(AVBSFContext *ctx, const int padding)
     static const uint8_t nalu_header[4] = { 0, 0, 0, 1 };
     int length_size = (*extradata++ & 0x3) + 1; // retrieve length coded size
 
-    ctx->sps_offset = ctx->pps_offset = -1;
+    s->sps_offset = s->pps_offset = -1;
 
     /* retrieve sps and pps unit(s) */
     unit_nb = *extradata++ & 0x1f; /* number of sps unit(s) */
     if (!unit_nb) {
         goto pps;
     } else {
-        ctx->sps_offset = 0;
+        s->sps_offset = 0;
         sps_seen = 1;
     }
 
@@ -105,21 +90,15 @@ static int h264_extradata_to_annexb(AVBSFContext *ctx, const int padding)
 
         unit_size   = AV_RB16(extradata);
         total_size += unit_size + 4;
-<<<<<<< HEAD
         if (total_size > INT_MAX - padding) {
-            av_log(avctx, AV_LOG_ERROR,
+            av_log(ctx, AV_LOG_ERROR,
                    "Too big extradata size, corrupted stream or invalid MP4/AVCC bitstream\n");
             av_free(out);
             return AVERROR(EINVAL);
         }
-        if (extradata + 2 + unit_size > avctx->extradata + avctx->extradata_size) {
-            av_log(avctx, AV_LOG_ERROR, "Packet header is not contained in global extradata, "
+        if (extradata + 2 + unit_size > ctx->par_in->extradata + ctx->par_in->extradata_size) {
+            av_log(ctx, AV_LOG_ERROR, "Packet header is not contained in global extradata, "
                    "corrupted stream or invalid MP4/AVCC bitstream\n");
-=======
-        if (total_size > INT_MAX - padding ||
-            extradata + 2 + unit_size > ctx->par_in->extradata +
-            ctx->par_in->extradata_size) {
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
             av_free(out);
             return AVERROR(EINVAL);
         }
@@ -132,7 +111,7 @@ pps:
         if (!unit_nb && !sps_done++) {
             unit_nb = *extradata++; /* number of pps unit(s) */
             if (unit_nb) {
-                ctx->pps_offset = total_size;
+                s->pps_offset = total_size;
                 pps_seen = 1;
             }
         }
@@ -151,29 +130,15 @@ pps:
                "Warning: PPS NALU missing or invalid. "
                "The resulting stream may not play.\n");
 
-<<<<<<< HEAD
-    if (!ctx->private_spspps) {
-        av_free(avctx->extradata);
-        avctx->extradata      = out;
-        avctx->extradata_size = total_size;
-    }
-    ctx->spspps_buf  = out;
-    ctx->spspps_size = total_size;
-=======
     av_freep(&ctx->par_out->extradata);
     ctx->par_out->extradata      = out;
     ctx->par_out->extradata_size = total_size;
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
 
     return length_size;
 }
 
 static int h264_mp4toannexb_init(AVBSFContext *ctx)
 {
-<<<<<<< HEAD
-    H264BSFContext *ctx = bsfc->priv_data;
-    int i;
-=======
     H264BSFContext *s = ctx->priv_data;
     int ret;
 
@@ -184,7 +149,9 @@ static int h264_mp4toannexb_init(AVBSFContext *ctx)
             return ret;
 
         s->length_size      = ret;
-        s->first_idr        = 1;
+        s->new_idr          = 1;
+        s->idr_sps_seen     = 0;
+        s->idr_pps_seen     = 0;
         s->extradata_parsed = 1;
     }
 
@@ -196,14 +163,13 @@ static int h264_mp4toannexb_filter(AVBSFContext *ctx, AVPacket *out)
     H264BSFContext *s = ctx->priv_data;
 
     AVPacket *in;
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
     uint8_t unit_type;
     int32_t nal_size;
     uint32_t cumul_size    = 0;
     const uint8_t *buf;
     const uint8_t *buf_end;
     int            buf_size;
-    int ret = 0;
+    int ret = 0, i;
 
     ret = ff_bsf_get_packet(ctx, &in);
     if (ret < 0)
@@ -216,46 +182,17 @@ static int h264_mp4toannexb_filter(AVBSFContext *ctx, AVPacket *out)
         return 0;
     }
 
-<<<<<<< HEAD
-    /* retrieve sps and pps NAL units from extradata */
-    if (!ctx->extradata_parsed) {
-        if (args && strstr(args, "private_spspps_buf"))
-            ctx->private_spspps = 1;
-
-        ret = h264_extradata_to_annexb(ctx, avctx, AV_INPUT_BUFFER_PADDING_SIZE);
-        if (ret < 0)
-            return ret;
-        ctx->length_size      = ret;
-        ctx->new_idr          = 1;
-        ctx->idr_sps_seen     = 0;
-        ctx->idr_pps_seen     = 0;
-        ctx->extradata_parsed = 1;
-    }
-=======
     buf      = in->data;
     buf_size = in->size;
     buf_end  = in->data + in->size;
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
 
     do {
-<<<<<<< HEAD
         ret= AVERROR(EINVAL);
-        if (buf + ctx->length_size > buf_end)
-            goto fail;
-
-        for (nal_size = 0, i = 0; i<ctx->length_size; i++)
-            nal_size = (nal_size << 8) | buf[i];
-=======
         if (buf + s->length_size > buf_end)
             goto fail;
 
-        if (s->length_size == 1) {
-            nal_size = buf[0];
-        } else if (s->length_size == 2) {
-            nal_size = AV_RB16(buf);
-        } else
-            nal_size = AV_RB32(buf);
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
+        for (nal_size = 0, i = 0; i<s->length_size; i++)
+            nal_size = (nal_size << 8) | buf[i];
 
         buf += s->length_size;
         unit_type = *buf & 0x1f;
@@ -263,22 +200,21 @@ static int h264_mp4toannexb_filter(AVBSFContext *ctx, AVPacket *out)
         if (nal_size > buf_end - buf || nal_size < 0)
             goto fail;
 
-<<<<<<< HEAD
         if (unit_type == 7)
-            ctx->idr_sps_seen = ctx->new_idr = 1;
+            s->idr_sps_seen = s->new_idr = 1;
         else if (unit_type == 8) {
-            ctx->idr_pps_seen = ctx->new_idr = 1;
+            s->idr_pps_seen = s->new_idr = 1;
             /* if SPS has not been seen yet, prepend the AVCC one to PPS */
-            if (!ctx->idr_sps_seen) {
-                if (ctx->sps_offset == -1)
-                    av_log(avctx, AV_LOG_WARNING, "SPS not present in the stream, nor in AVCC, stream may be unreadable\n");
+            if (!s->idr_sps_seen) {
+                if (s->sps_offset == -1)
+                    av_log(ctx, AV_LOG_WARNING, "SPS not present in the stream, nor in AVCC, stream may be unreadable\n");
                 else {
-                    if ((ret = alloc_and_copy(poutbuf, poutbuf_size,
-                                         ctx->spspps_buf + ctx->sps_offset,
-                                         ctx->pps_offset != -1 ? ctx->pps_offset : ctx->spspps_size - ctx->sps_offset,
+                    if ((ret = alloc_and_copy(out,
+                                         ctx->par_out->extradata + s->sps_offset,
+                                         s->pps_offset != -1 ? s->pps_offset : ctx->par_out->extradata_size - s->sps_offset,
                                          buf, nal_size)) < 0)
                         goto fail;
-                    ctx->idr_sps_seen = 1;
+                    s->idr_sps_seen = 1;
                     goto next_nal;
                 }
             }
@@ -287,51 +223,34 @@ static int h264_mp4toannexb_filter(AVBSFContext *ctx, AVPacket *out)
         /* if this is a new IDR picture following an IDR picture, reset the idr flag.
          * Just check first_mb_in_slice to be 0 as this is the simplest solution.
          * This could be checking idr_pic_id instead, but would complexify the parsing. */
-        if (!ctx->new_idr && unit_type == 5 && (buf[1] & 0x80))
-            ctx->new_idr = 1;
+        if (!s->new_idr && unit_type == 5 && (buf[1] & 0x80))
+            s->new_idr = 1;
 
         /* prepend only to the first type 5 NAL unit of an IDR picture, if no sps/pps are already present */
-        if (ctx->new_idr && unit_type == 5 && !ctx->idr_sps_seen && !ctx->idr_pps_seen) {
-            if ((ret=alloc_and_copy(poutbuf, poutbuf_size,
-                               ctx->spspps_buf, ctx->spspps_size,
+        if (s->new_idr && unit_type == 5 && !s->idr_sps_seen && !s->idr_pps_seen) {
+            if ((ret=alloc_and_copy(out,
+                               ctx->par_out->extradata, ctx->par_out->extradata_size,
                                buf, nal_size)) < 0)
                 goto fail;
-            ctx->new_idr = 0;
+            s->new_idr = 0;
         /* if only SPS has been seen, also insert PPS */
-        } else if (ctx->new_idr && unit_type == 5 && ctx->idr_sps_seen && !ctx->idr_pps_seen) {
-            if (ctx->pps_offset == -1) {
-                av_log(avctx, AV_LOG_WARNING, "PPS not present in the stream, nor in AVCC, stream may be unreadable\n");
-                if ((ret = alloc_and_copy(poutbuf, poutbuf_size,
-                                     NULL, 0, buf, nal_size)) < 0)
+        } else if (s->new_idr && unit_type == 5 && s->idr_sps_seen && !s->idr_pps_seen) {
+            if (s->pps_offset == -1) {
+                av_log(ctx, AV_LOG_WARNING, "PPS not present in the stream, nor in AVCC, stream may be unreadable\n");
+                if ((ret = alloc_and_copy(out, NULL, 0, buf, nal_size)) < 0)
                     goto fail;
-            } else if ((ret = alloc_and_copy(poutbuf, poutbuf_size,
-                                        ctx->spspps_buf + ctx->pps_offset, ctx->spspps_size - ctx->pps_offset,
+            } else if ((ret = alloc_and_copy(out,
+                                        ctx->par_out->extradata + s->pps_offset, ctx->par_out->extradata_size - s->pps_offset,
                                         buf, nal_size)) < 0)
                 goto fail;
         } else {
-            if ((ret=alloc_and_copy(poutbuf, poutbuf_size,
-                               NULL, 0, buf, nal_size)) < 0)
+            if ((ret=alloc_and_copy(out, NULL, 0, buf, nal_size)) < 0)
                 goto fail;
-            if (!ctx->new_idr && unit_type == 1) {
-                ctx->new_idr = 1;
-                ctx->idr_sps_seen = 0;
-                ctx->idr_pps_seen = 0;
+            if (!s->new_idr && unit_type == 1) {
+                s->new_idr = 1;
+                s->idr_sps_seen = 0;
+                s->idr_pps_seen = 0;
             }
-=======
-        /* prepend only to the first type 5 NAL unit of an IDR picture */
-        if (s->first_idr && unit_type == 5) {
-            if (alloc_and_copy(out,
-                               ctx->par_out->extradata, ctx->par_out->extradata_size,
-                               buf, nal_size) < 0)
-                goto fail;
-            s->first_idr = 0;
-        } else {
-            if (alloc_and_copy(out,
-                               NULL, 0, buf, nal_size) < 0)
-                goto fail;
-            if (!s->first_idr && unit_type == 1)
-                s->first_idr = 1;
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
         }
 
 next_nal:
@@ -344,25 +263,6 @@ next_nal:
         goto fail;
 
 fail:
-<<<<<<< HEAD
-    av_freep(poutbuf);
-    *poutbuf_size = 0;
-    return ret;
-}
-
-static void h264_mp4toannexb_filter_close(AVBitStreamFilterContext *bsfc)
-{
-    H264BSFContext *ctx = bsfc->priv_data;
-    if (ctx->private_spspps)
-        av_freep(&ctx->spspps_buf);
-}
-
-AVBitStreamFilter ff_h264_mp4toannexb_bsf = {
-    .name           = "h264_mp4toannexb",
-    .priv_data_size = sizeof(H264BSFContext),
-    .filter         = h264_mp4toannexb_filter,
-    .close          = h264_mp4toannexb_filter_close,
-=======
     if (ret < 0)
         av_packet_unref(out);
     av_packet_free(&in);
@@ -380,5 +280,4 @@ const AVBitStreamFilter ff_h264_mp4toannexb_bsf = {
     .init           = h264_mp4toannexb_init,
     .filter         = h264_mp4toannexb_filter,
     .codec_ids      = codec_ids,
->>>>>>> 33d18982fa03feb061c8f744a4f0a9175c1f63ab
 };
