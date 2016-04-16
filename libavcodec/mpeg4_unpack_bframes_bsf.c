@@ -108,6 +108,7 @@ static int mpeg4_unpack_bframes_filter(AVBSFContext *ctx, AVPacket *out)
         s->b_frame_buf      = create_new_buffer(in->data + pos_vop2, s->b_frame_buf_size);
         if (!s->b_frame_buf) {
             s->b_frame_buf_size = 0;
+            av_packet_free(&in);
             return AVERROR(ENOMEM);
         }
     }
