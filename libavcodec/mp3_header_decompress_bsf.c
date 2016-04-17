@@ -47,7 +47,6 @@ static int mp3_header_decompress(AVBSFContext *ctx, AVPacket *out)
     if(ff_mpa_check_header(header) >= 0){
         av_packet_move_ref(out, in);
         av_packet_free(&in);
-        out->size = buf_size;
 
         return 0;
     }
@@ -82,6 +81,9 @@ static int mp3_header_decompress(AVBSFContext *ctx, AVPacket *out)
     header |= (frame_size == buf_size + 4)<<16; //FIXME actually set a correct crc instead of 0
 
     ret = av_new_packet(out, frame_size);
+    if (ret < 0)
+        return ret;
+    ret = av_packet_copy_props(out, in);
     if (ret < 0)
         return ret;
     memcpy(out->data + frame_size - buf_size, buf, buf_size + AV_INPUT_BUFFER_PADDING_SIZE);
