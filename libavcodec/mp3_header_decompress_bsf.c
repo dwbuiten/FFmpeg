@@ -53,7 +53,8 @@ static int mp3_header_decompress(AVBSFContext *ctx, AVPacket *out)
 
     if(ctx->par_in->extradata_size != 15 || strcmp(ctx->par_in->extradata, "FFCMP3 0.0")){
         av_log(ctx, AV_LOG_ERROR, "Extradata invalid %d\n", ctx->par_in->extradata_size);
-        return -1;
+        ret = AVERROR(EINVAL);
+        goto fail;
     }
 
     header= AV_RB32(ctx->par_in->extradata+11) & MP3_MASK;
@@ -73,7 +74,8 @@ static int mp3_header_decompress(AVBSFContext *ctx, AVPacket *out)
     }
     if(bitrate_index == 30){
         av_log(ctx, AV_LOG_ERROR, "Could not find bitrate_index.\n");
-        return -1;
+        ret = AVERROR(EINVAL);
+        goto fail;
     }
 
     header |= (bitrate_index&1)<<9;
@@ -82,10 +84,10 @@ static int mp3_header_decompress(AVBSFContext *ctx, AVPacket *out)
 
     ret = av_new_packet(out, frame_size);
     if (ret < 0)
-        return ret;
+        goto fail;
     ret = av_packet_copy_props(out, in);
     if (ret < 0)
-        return ret;
+        goto fail;
     memcpy(out->data + frame_size - buf_size, buf, buf_size + AV_INPUT_BUFFER_PADDING_SIZE);
 
     if(ctx->par_in->channels==2){
@@ -102,7 +104,11 @@ static int mp3_header_decompress(AVBSFContext *ctx, AVPacket *out)
 
     AV_WB32(out->data, header);
 
-    return 0;
+    ret = 0;
+
+fail:
+    av_packet_free(&in);
+    return ret;
 }
 
 static const enum AVCodecID codec_ids[] = {
