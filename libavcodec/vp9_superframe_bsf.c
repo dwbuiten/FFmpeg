@@ -171,8 +171,8 @@ static int vp9_superframe_filter(AVBSFContext *ctx, AVPacket *out)
         av_freep(&s->cache[n].data);
     s->n_cache = 0;
 
-    ret = av_packet_copy_props(out, in);
-    if (ret < 0)
+    res = av_packet_copy_props(out, in);
+    if (res < 0)
         goto done;
 
 done:
