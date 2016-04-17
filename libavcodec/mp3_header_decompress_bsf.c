@@ -26,9 +26,6 @@
 #include "mpegaudiodata.h"
 
 
-/*static int mp3_header_decompress(AVBitStreamFilterContext *bsfc, AVCodecContext *avctx, const char *args,
-                     uint8_t **poutbuf, int *poutbuf_size,
-                     const uint8_t *buf, int buf_size, int keyframe){*/
 static int mp3_header_decompress(AVBSFContext *ctx, AVPacket *out)
 {
     AVPacket *in;
