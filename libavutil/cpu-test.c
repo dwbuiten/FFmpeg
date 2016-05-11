@@ -23,6 +23,13 @@
 #include "compat/getopt.c"
 #endif
 
+#include <stdint.h>
+#include <stdio.h>
+
+#include "avstring.h"
+#include "common.h"
+#include "cpu.h"
+
 static const struct {
     int flag;
     const char *name;

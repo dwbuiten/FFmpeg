@@ -20,11 +20,13 @@
 #include <stdio.h>
 
 #include "common.h"
+#include "channel_layout.h"
 #include "error.h"
 #include "log.h"
 #include "mem.h"
 #include "rational.h"
 #include "opt.h"
+#include "pixdesc.h"
 
 typedef struct TestContext {
     const AVClass *class;
