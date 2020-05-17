@@ -425,9 +425,17 @@ static int librav1e_send_frame(AVCodecContext *avctx, const AVFrame *frame)
     if (frame) {
         const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(frame->format);
 
+        int64_t *pts = av_malloc(sizeof(int64_t));
+        if (!pts) {
+            av_log(avctx, AV_LOG_ERROR, "Could not allocate PTS buffer.\n");
+            return AVERROR(ENOMEM);
+        }
+        *pts = frame->pts;
+
         rframe = rav1e_frame_new(ctx->ctx);
         if (!rframe) {
             av_log(avctx, AV_LOG_ERROR, "Could not allocate new rav1e frame.\n");
+            av_freep(&pts);
             return AVERROR(ENOMEM);
         }
 
@@ -438,6 +446,7 @@ static int librav1e_send_frame(AVCodecContext *avctx, const AVFrame *frame)
                                    (frame->height >> shift) * frame->linesize[i],
                                    frame->linesize[i], bytes);
         }
+        rav1e_frame_set_opaque(rframe, pts, av_free);
     }
 
     ret = rav1e_send_frame(ctx->ctx, rframe);
@@ -519,7 +528,8 @@ retry:
     if (rpkt->frame_type == RA_FRAME_TYPE_KEY)
         pkt->flags |= AV_PKT_FLAG_KEY;
 
-    pkt->pts = pkt->dts = rpkt->input_frameno * avctx->ticks_per_frame;
+    pkt->pts = pkt->dts = *((int64_t *) rpkt->opaque);
+    av_free(rpkt->opaque);
     rav1e_packet_unref(rpkt);
 
     if (avctx->flags & AV_CODEC_FLAG_GLOBAL_HEADER) {
