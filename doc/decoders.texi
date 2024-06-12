@@ -38,6 +38,74 @@ Select an operating point of a scalable AV1 bitstream (0 - 31). Default is 0.
 
 @end table
 
+@section hevc
+HEVC (AKA ITU-T H.265 or ISO/IEC 23008-2) decoder.
+
+The decoder supports MV-HEVC multiview streams with at most two views. Views to
+be output may be selected either as the index of an output layer set defined in
+the VPS (the @option{output_layer_set} option), or as a list of view IDs (the
+@option{view_ids} option). These options are mutually exclusive - only one may
+be specified at a time. These option may be set either statically before decoder
+init, or from the @code{get_format()} callback - useful for the case when the
+view count or IDs change dynamically during decoding.
+
+Only the base layer is decoded by default.
+
+Note that if you are using the @code{ffmpeg} CLI tool, you should be using view
+specifiers as documented in its manual, rather than the options documented here.
+
+@subsection Options
+
+@table @option
+
+@item output_layer_set (MV-HEVC)
+Select the index of the output layer set that should be output. Available layer
+sets may be read by the user from the @option{output_layer_set_available}
+option.
+
+@item output_layer_set_available (MV-HEVC)
+This option may be read by the caller to retrieve an array of output layer sets
+available in the active VPS. The array is empty for single-layer video.
+
+Each array element is a bitmask defining layers present in the set. I.e. when
+i-th bit is equal to 1, the layer with view ID @option{view_ids[i]} is present
+in the set.
+
+The value of this option is guaranteed to be accurate when read from the
+@code{get_format()} callback. It may also be set at other times (e.g. after
+opening the decoder), but the value is informational only and may be incorrect
+(e.g. when the stream contains multiple distinct VPS NALUs).
+
+@item view_ids (MV-HEVC)
+Specify a list of view IDs that should be output. This option can also be set to
+a single '-1', which will cause all views defined in the VPS to be decoded and
+output.
+
+@item view_ids_available (MV-HEVC)
+This option may be read by the caller to retrieve an array of view IDs available
+in the active VPS. The array is empty for single-layer video.
+
+Same validity restrictions as for @option{output_layer_set_available} apply to
+this option.
+
+@item view_pos_available (MV-HEVC)
+This option may be read by the caller to retrieve an array of view positions
+(left, right, or unspecified) available in the active VPS, as AVStereo3DView
+values. When the array is available, its elements describe view IDs from
+@option{view_ids_available}.
+
+Same validity restrictions as for @option{output_layer_set_available} apply to
+this option.
+
+@item view_id_cur (MV-HEVC)
+This option may be read from within the @code{get_buffer2()} callback to obtain
+the view ID of the frame for which the callback is being called.
+
+It should not be accessed at other times and its contents are then not
+specified.
+
+@end table
+
 @section rawvideo
 
 Raw video decoder.
