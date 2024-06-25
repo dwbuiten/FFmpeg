@@ -22,6 +22,7 @@
  */
 
 #include "libavutil/mem.h"
+#include "libavutil/stereo3d.h"
 
 #include "container_fifo.h"
 #include "decode.h"
@@ -172,12 +173,30 @@ int ff_hevc_set_new_ref(HEVCContext *s, HEVCLayerContext *l, int poc)
 
     // add view ID side data if it's nontrivial
     if (vps->nb_layers > 1 || view_id) {
+        HEVCSEITDRDI *tdrdi = &s->sei.tdrdi;
         AVFrameSideData *sd = av_frame_side_data_new(&ref->f->side_data, &ref->f->nb_side_data,
                                                      AV_FRAME_DATA_VIEW_ID, sizeof(int),
                                                      AV_FRAME_SIDE_DATA_FLAG_REPLACE);
         if (!sd)
             return AVERROR(ENOMEM);
         *(int*)sd->data = view_id;
+
+        if (tdrdi->num_ref_displays) {
+            AVStereo3D *stereo_3d;
+
+            av_frame_remove_side_data(ref->f, AV_FRAME_DATA_STEREO3D);
+            stereo_3d = av_stereo3d_create_side_data(ref->f);
+            if (!stereo_3d)
+                return AVERROR(ENOMEM);
+
+            stereo_3d->type = AV_STEREO3D_FRAMESEQUENCE;
+            if (tdrdi->left_view_id[0] == view_id)
+                stereo_3d->view = AV_STEREO3D_VIEW_LEFT;
+            else if (tdrdi->right_view_id[0] == view_id)
+                stereo_3d->view = AV_STEREO3D_VIEW_RIGHT;
+            else
+                stereo_3d->view = AV_STEREO3D_VIEW_UNSPEC;
+        }
     }
 
     if (!(s->layers_active_output & (1 << s->cur_layer)))
