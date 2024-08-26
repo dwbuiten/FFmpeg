@@ -1388,23 +1388,24 @@ static int ost_add(Muxer *mux, const OptionsContext *o, enum AVMediaType type,
         (type == AVMEDIA_TYPE_VIDEO || type == AVMEDIA_TYPE_AUDIO)) {
         char name[16];
         OutputFilterOptions opts = {
-            .enc = enc,
-            .name        = name,
-            .format      = (type == AVMEDIA_TYPE_VIDEO) ?
-                           ost->enc_ctx->pix_fmt : ost->enc_ctx->sample_fmt,
-            .width       = ost->enc_ctx->width,
-            .height      = ost->enc_ctx->height,
-            .vsync_method = vsync_method,
-            .sample_rate = ost->enc_ctx->sample_rate,
-            .ch_layout   = ost->enc_ctx->ch_layout,
-            .sws_opts    = o->g->sws_dict,
-            .swr_opts    = o->g->swr_opts,
-            .vs          = vs,
-            .output_tb = enc_tb,
+            .enc              = enc,
+            .name             = name,
+            .format           = (type == AVMEDIA_TYPE_VIDEO) ?
+                                ost->enc_ctx->pix_fmt : ost->enc_ctx->sample_fmt,
+            .width            = ost->enc_ctx->width,
+            .height           = ost->enc_ctx->height,
+            .vsync_method     = vsync_method,
+            .sample_rate      = ost->enc_ctx->sample_rate,
+            .ch_layout        = ost->enc_ctx->ch_layout,
+            .sws_opts         = o->g->sws_dict,
+            .swr_opts         = o->g->swr_opts,
+            .vs               = vs,
+            .output_tb        = enc_tb,
             .trim_start_us    = mux->of.start_time,
             .trim_duration_us = mux->of.recording_time,
-            .ts_offset = mux->of.start_time == AV_NOPTS_VALUE ?
-                         0 : mux->of.start_time,
+            .ts_offset        = mux->of.start_time == AV_NOPTS_VALUE ?
+                                0 : mux->of.start_time,
+
             .flags = OFILTER_FLAG_DISABLE_CONVERT * !!keep_pix_fmt |
                      OFILTER_FLAG_AUTOSCALE       * !!autoscale    |
                      OFILTER_FLAG_AUDIO_24BIT * !!(av_get_exact_bits_per_sample(ost->enc_ctx->codec_id) == 24),
