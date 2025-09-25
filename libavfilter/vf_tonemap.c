@@ -33,6 +33,7 @@
 #include "libavutil/intreadwrite.h"
 #include "libavutil/opt.h"
 #include "libavutil/pixdesc.h"
+#include "libavutil/thread.h"
 
 #include "avfilter.h"
 #include "colorspace.h"
@@ -47,6 +48,7 @@ enum TonemapAlgorithm {
     TONEMAP_REINHARD,
     TONEMAP_HABLE,
     TONEMAP_MOBIUS,
+    TONEMAP_BT2446A,
     TONEMAP_MAX,
 };
 
@@ -60,6 +62,45 @@ typedef struct TonemapContext {
 
     const AVLumaCoefficients *coeffs;
 } TonemapContext;
+
+AVOnce bt2446a_luts = AV_ONCE_INIT;
+
+static uint16_t bt2446a_ysdr_lut[1 << 16];
+static uint16_t bt2446a_fy_lut[1 << 16];
+
+/*
+ * BT.2446 A has a lot of stuff that can simply be generated once, with
+ * floats, and stashed as integers for future use in a fixed point
+ * implementation.
+ */
+static void generate_bt2446a_luts(void)
+{
+    const float phdr        = 1.0 + 32.0 * powf(1000.0 / 10000.0, 1.0 / 2.4); /* Currently hardcoded to 1000 nits for HLG. */
+    const float psdr        = 1.0 + 32.0 * powf(100.0 / 10000.0, 1.0 / 2.4); /* Assume SDR is 100 nits. */
+    const float ilogphdr    = 1.0 / logf(phdr);
+    const float ipsdrminus1 = 1.0 / (psdr - 1.0);
+
+    for (uint32_t i = 0; i < (1 << 16); i++) {
+        float luma = ((float) i) / 65535.0;
+        float yp   = logf(1.0 + (phdr - 1.0) * luma) * ilogphdr;
+        float yc, ysdr, fy;
+
+        if (yp < 0.7399)
+            yc = 1.077 * yp;
+        else if (yp < 0.9909)
+            yc = ((-1.151 * yp) + 2.7811) * yp - 0.6302;
+        else
+            yc = 0.5 * yp + 0.5;
+
+        ysdr = (powf(psdr, yc) - 1.0) * ipsdrminus1;
+        fy   = !i ? 0.0 : ysdr / (1.1 * luma);
+
+        bt2446a_ysdr_lut[i] = ysdr * 65535.0;
+        bt2446a_fy_lut[i]   = fy * 16383.0;
+    }
+
+    printf("init\n");
+}
 
 static av_cold int init(AVFilterContext *ctx)
 {
@@ -77,6 +118,9 @@ static av_cold int init(AVFilterContext *ctx)
     case TONEMAP_MOBIUS:
         if (isnan(s->param))
             s->param = 0.3f;
+        break;
+    case TONEMAP_BT2446A:
+        ff_thread_once(&bt2446a_luts, generate_bt2446a_luts);
         break;
     }
 
@@ -177,6 +221,51 @@ typedef struct ThreadData {
     double peak;
 } ThreadData;
 
+/*
+ * BT.2446 (Type A) is optimized to produce as visually close to a given broadcast
+ * (1000 nits) signal as possible post-tonemapping. It works in teh YCC-space for
+ * perceptual color management purposes, meaning we can be sneaking and work directly
+ * in the YUV444P10 integer space (by way of a fixed point implementation).
+ *
+ * Obviously, this is only one possible implementaiton, it is fully possible to extend
+ * this implementation to other peak nit levels (see LUT generation), and pixel
+ * types (float), as well as RGB. This implementation is provided as a PoC, as
+ * it stands.
+ *
+ * Input is full range (per spec).
+ *
+ * Really, libavfilter ain't the right place for this sort of stuff, probably.
+ *
+ * Ref: https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-BT.2446-1-2021-PDF-E.pdf
+ */
+
+static void tonemap_bt2446a(TonemapContext *s, AVFrame *out, const AVFrame *in,
+                            const AVPixFmtDescriptor *desc, int x, int y)
+{
+    int map[3] = { desc->comp[0].plane, desc->comp[1].plane, desc->comp[2].plane };
+    const uint16_t *y_in = (const uint16_t *)(in->data[map[0]] + x * desc->comp[map[0]].step + y * in->linesize[map[0]]);
+    const uint16_t *u_in = (const uint16_t *)(in->data[map[1]] + x * desc->comp[map[1]].step + y * in->linesize[map[1]]);
+    const uint16_t *v_in = (const uint16_t *)(in->data[map[2]] + x * desc->comp[map[2]].step + y * in->linesize[map[2]]);
+    uint16_t *y_out = (uint16_t *)(out->data[map[0]] + x * desc->comp[map[0]].step + y * out->linesize[map[0]]);
+    uint16_t *u_out = (uint16_t *)(out->data[map[1]] + x * desc->comp[map[1]].step + y * out->linesize[map[1]]);
+    uint16_t *v_out = (uint16_t *)(out->data[map[2]] + x * desc->comp[map[2]].step + y * out->linesize[map[2]]);
+
+    /* All of these names are direct from the spec. */
+    uint16_t luma   = (*y_in) << 6;
+    uint16_t ysdr   = bt2446a_ysdr_lut[luma];
+    uint16_t fy     = bt2446a_fy_lut[luma];
+    int16_t utmo    = av_clip_int16(((int32_t) fy * ((int32_t) ((*u_in) - 512) << 6) + 32768) >> 14);
+    int32_t vtmo    = ((int64_t) fy * (((int64_t) ((*v_in) - 512) << 6)) + 32768) >> 14;
+    int16_t adjvtmo = ((int32_t) 6553 * ((int32_t) vtmo)) >> 16;
+    uint16_t yptmo  = av_clip_uint16(((int32_t) ysdr) - FFMAX(((int32_t) adjvtmo), 0));
+
+    vtmo = av_clip_int16(vtmo);
+
+    *y_out = yptmo >> 6;
+    *u_out = (utmo >> 6) + 512;
+    *v_out = (vtmo >> 6) + 512;
+}
+
 static int tonemap_slice(AVFilterContext *ctx, void *arg, int jobnr, int nb_jobs)
 {
     TonemapContext *s = ctx->priv;
@@ -188,9 +277,15 @@ static int tonemap_slice(AVFilterContext *ctx, void *arg, int jobnr, int nb_jobs
     const int slice_end = (in->height * (jobnr+1)) / nb_jobs;
     double peak = td->peak;
 
-    for (int y = slice_start; y < slice_end; y++)
-        for (int x = 0; x < out->width; x++)
-            tonemap(s, out, in, desc, x, y, peak);
+    if (s->tonemap == TONEMAP_BT2446A) {
+        for (int y = slice_start; y < slice_end; y++)
+            for (int x = 0; x < out->width; x++)
+                tonemap_bt2446a(s, out, in, desc, x, y);
+    } else {
+        for (int y = slice_start; y < slice_end; y++)
+            for (int x = 0; x < out->width; x++)
+                tonemap(s, out, in, desc, x, y, peak);
+    }
 
     return 0;
 }
@@ -225,6 +320,33 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
         return ret;
     }
 
+    if (s->tonemap == TONEMAP_BT2446A && in->format != AV_PIX_FMT_YUV444P10) {
+        av_log(ctx, AV_LOG_ERROR, "BT.2446 A only works with YUV444P.\n");
+        return AVERROR(EINVAL);
+    }
+
+    /* NOTE/HACK: It is assumed that you have a max nits of 1000 here. */
+    if (in->format == AV_PIX_FMT_YUV444P10) {
+        /* Annoying, but we need to check here too. */
+        if (s->tonemap != TONEMAP_BT2446A) {
+            av_log(ctx, AV_LOG_ERROR, "BT.2446 A only works with YUV444P.\n");
+            return AVERROR(EINVAL);
+        }
+        if (outlink->format != AV_PIX_FMT_YUV444P10) {
+            av_log(ctx, AV_LOG_ERROR, "Only YUB444P->YUV444P is supported with BT.2446 A mode.\n");
+            return AVERROR(EINVAL);
+        }
+        if (in->color_trc != AVCOL_TRC_BT2020_10 || in->colorspace != AVCOL_SPC_BT2020_NCL ||
+            in->color_primaries != AVCOL_PRI_BT2020 || in->color_range != AVCOL_RANGE_JPEG) {
+            av_log(ctx, AV_LOG_ERROR, "Only 10-bit BT.2020 is supported with BT.2446 A.\n");
+            return AVERROR(EINVAL);
+        }
+        if (out->color_trc != AVCOL_TRC_BT2020_10 || out->colorspace != AVCOL_SPC_BT2020_NCL
+            || out->color_primaries != AVCOL_PRI_BT2020 || out->color_range != AVCOL_RANGE_JPEG) {
+            av_log(ctx, AV_LOG_ERROR, "Only 10-bit BT.2020 is supported with BT.2446 A.\n");
+            return AVERROR(EINVAL);
+        }
+    } else {
     /* input and output transfer will be linear */
     if (in->color_trc == AVCOL_TRC_UNSPECIFIED) {
         av_log(ctx, AV_LOG_WARNING, "Untagged transfer, assuming linear light\n");
@@ -248,6 +370,7 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
                    av_color_space_name(in->colorspace));
         av_log(ctx, AV_LOG_WARNING, "desaturation is disabled\n");
         s->desat = 0;
+    }
     }
 
     /* do the tone map */
@@ -290,6 +413,7 @@ static const AVOption tonemap_options[] = {
     {     "reinhard", 0, 0, AV_OPT_TYPE_CONST, {.i64 = TONEMAP_REINHARD},          0, 0, FLAGS, .unit = "tonemap" },
     {     "hable",    0, 0, AV_OPT_TYPE_CONST, {.i64 = TONEMAP_HABLE},             0, 0, FLAGS, .unit = "tonemap" },
     {     "mobius",   0, 0, AV_OPT_TYPE_CONST, {.i64 = TONEMAP_MOBIUS},            0, 0, FLAGS, .unit = "tonemap" },
+    {     "bt2446a",  0, 0, AV_OPT_TYPE_CONST, {.i64 = TONEMAP_BT2446A},           0, 0, FLAGS, .unit = "tonemap" },
     { "param",        "tonemap parameter", OFFSET(param), AV_OPT_TYPE_DOUBLE, {.dbl = NAN}, DBL_MIN, DBL_MAX, FLAGS },
     { "desat",        "desaturation strength", OFFSET(desat), AV_OPT_TYPE_DOUBLE, {.dbl = 2}, 0, DBL_MAX, FLAGS },
     { "peak",         "signal peak override", OFFSET(peak), AV_OPT_TYPE_DOUBLE, {.dbl = 0}, 0, DBL_MAX, FLAGS },
@@ -315,5 +439,5 @@ const FFFilter ff_vf_tonemap = {
     .priv_size       = sizeof(TonemapContext),
     FILTER_INPUTS(tonemap_inputs),
     FILTER_OUTPUTS(ff_video_default_filterpad),
-    FILTER_PIXFMTS(AV_PIX_FMT_GBRPF32, AV_PIX_FMT_GBRAPF32),
+    FILTER_PIXFMTS(AV_PIX_FMT_GBRPF32, AV_PIX_FMT_GBRAPF32, AV_PIX_FMT_YUV444P10),
 };
